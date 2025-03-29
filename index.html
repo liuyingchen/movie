@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频游戏项目</title>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <div id="container">
+      <!-- 视频播放区域 -->
+      <div id="videoContainer">
+        <video id="videoPlayer" playsinline></video>
+      </div>
+      
+      <!-- 游戏区域 -->
+      <div id="gameContainer">
+        <!-- 游戏E将在这里渲染 -->
+        <div id="gameE" class="game"></div>
+        <!-- 游戏F将在这里渲染 -->
+        <div id="gameF" class="game"></div>
+      </div>
+      
+      <!-- 加载指示器 -->
+      <div id="loadingIndicator">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+    </div>
+
+    <!-- 脚本加载 -->
+    <script src="js/videoPlayer.js"></script>
+    <script src="js/gameE.js"></script>
+    <script src="js/gameF.js"></script>
+    <script src="js/gameManager.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
