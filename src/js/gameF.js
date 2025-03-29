@@ -178,12 +178,19 @@ class GameF {
             
             .gift-container {
                 display: flex;
-                flex-wrap: wrap;
+                flex-direction: column;  /* 将布局改为纵向，便于创建两行 */
+                align-items: center;
                 justify-content: center;
-                gap: 20px;
+                gap: 25px;
                 margin-top: 30px;
                 margin-bottom: 30px;
-                perspective: 1000px;
+            }
+            
+            .gift-row {
+                display: flex;
+                justify-content: center;
+                gap: 25px;
+                flex-wrap: nowrap;
             }
             
             .gift {
@@ -625,7 +632,16 @@ class GameF {
                 currentPrizes.push(shuffledPrizes[i % shuffledPrizes.length]);
             }
             
-            // 创建礼物元素
+            // 创建两行礼物盒排列
+            // 第一行：5个礼物盒
+            const row1 = document.createElement('div');
+            row1.className = 'gift-row';
+            
+            // 第二行：4个礼物盒
+            const row2 = document.createElement('div');
+            row2.className = 'gift-row';
+            
+            // 为每一行添加礼物
             boxes.forEach((box, index) => {
                 const giftElement = document.createElement('div');
                 giftElement.className = `gift ${box.class}`;
@@ -658,11 +674,20 @@ class GameF {
                 
                 giftElement.addEventListener('click', handleGiftClick);
                 
-                giftContainer.appendChild(giftElement);
+                // 前5个放第一行，后4个放第二行
+                if (index < 5) {
+                    row1.appendChild(giftElement);
+                } else {
+                    row2.appendChild(giftElement);
+                }
                 
                 // 添加不同的动画延迟
                 giftElement.style.animationDelay = (index * 0.2) + 's';
             });
+            
+            // 将两行添加到容器中
+            giftContainer.appendChild(row1);
+            giftContainer.appendChild(row2);
         };
         
         // 处理礼物点击 - 添加自动完成逻辑
