@@ -1,334 +1,780 @@
 class GameF {
-    constructor(container) {
-        this.container = container || document.getElementById('gameF');
-        this.gameCompleteCallbacks = [];
-        this.backgroundVideo = null;
+    constructor(containerId) {
+        console.log('GameF构造函数被调用，传入参数:', containerId);
+        
+        // 直接接受容器ID或元素
+        if (typeof containerId === 'string') {
+            this.container = document.getElementById(containerId);
+            console.log('通过ID寻找容器:', containerId, '找到容器:', !!this.container);
+        } else {
+            this.container = containerId;
+            console.log('直接使用传入的容器元素:', !!this.container);
+        }
+        
+        // 如果没有找到容器，尝试通过固定ID查找
+        if (!this.container) {
+            console.warn('GameF构造函数中未找到容器，尝试通过"gameF"ID查找');
+            this.container = document.getElementById('gameF');
+            
+            if (!this.container) {
+                console.warn('GameF构造函数中仍未找到容器，将在start方法中创建');
+            }
+        }
+        
+        this.isRunning = false;
         this.score = 0;
-        this.timeLeft = 70; // 游戏时间70秒
-        this.timerElement = null;
-        this.scoreElement = null;
-        this.isGameActive = false;
+        this.onCompleteCallback = null;
         
-        // 创建游戏UI
-        this.createGameUI();
+        console.log('GameF初始化完成, 容器状态:', !!this.container);
     }
-    
-    // 创建游戏UI
-    createGameUI() {
-        // 清空容器
-        this.container.innerHTML = '';
-        
-        // 创建一个完整的覆盖层，确保所有游戏元素在视频上方可见
-        const fullOverlay = document.createElement('div');
-        fullOverlay.style.position = 'absolute';
-        fullOverlay.style.top = '0';
-        fullOverlay.style.left = '0';
-        fullOverlay.style.width = '100%';
-        fullOverlay.style.height = '100%';
-        fullOverlay.style.zIndex = '20'; // 确保高于视频
-        fullOverlay.style.display = 'flex';
-        fullOverlay.style.flexDirection = 'column';
-        fullOverlay.style.padding = '20px';
-        fullOverlay.style.boxSizing = 'border-box';
-        this.container.appendChild(fullOverlay);
-        
-        // 创建计时器和分数显示
-        const headerDiv = document.createElement('div');
-        headerDiv.style.display = 'flex';
-        headerDiv.style.justifyContent = 'space-between';
-        headerDiv.style.padding = '10px 20px';
-        headerDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-        headerDiv.style.borderRadius = '10px';
-        headerDiv.style.marginBottom = '20px';
-        
-        // 计时器
-        this.timerElement = document.createElement('div');
-        this.timerElement.style.fontSize = '24px';
-        this.timerElement.style.color = '#ff6600';
-        this.timerElement.style.fontWeight = 'bold';
-        this.timerElement.textContent = `${this.timeLeft}秒`;
-        
-        // 分数
-        this.scoreElement = document.createElement('div');
-        this.scoreElement.style.fontSize = '24px';
-        this.scoreElement.style.color = '#3399ff';
-        this.scoreElement.style.fontWeight = 'bold';
-        this.scoreElement.textContent = `得分: ${this.score}`;
-        
-        headerDiv.appendChild(this.timerElement);
-        headerDiv.appendChild(this.scoreElement);
-        fullOverlay.appendChild(headerDiv);
-        
-        // 创建游戏主区域 - 实际游戏内容显示在这里
-        const gameArea = document.createElement('div');
-        gameArea.style.flex = '1';
-        gameArea.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-        gameArea.style.borderRadius = '10px';
-        gameArea.style.marginBottom = '20px';
-        gameArea.style.display = 'flex';
-        gameArea.style.flexDirection = 'column';
-        gameArea.style.justifyContent = 'center';
-        gameArea.style.alignItems = 'center';
-        gameArea.style.position = 'relative';
-        gameArea.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-        gameArea.style.overflow = 'hidden';
-        
-        // 游戏内容 - 添加一些视觉元素
-        const servingPlate = document.createElement('div');
-        servingPlate.style.width = '70%';
-        servingPlate.style.height = '50%';
-        servingPlate.style.backgroundColor = 'rgba(245, 245, 245, 0.6)';
-        servingPlate.style.borderRadius = '50%';
-        servingPlate.style.position = 'relative';
-        servingPlate.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
-        servingPlate.style.border = '3px solid rgba(200, 200, 200, 0.8)';
-        
-        // 添加一些装饰元素 - 模拟食物
-        for (let i = 0; i < 8; i++) {
-            const foodItem = document.createElement('div');
-            foodItem.style.position = 'absolute';
-            foodItem.style.backgroundColor = 'rgba(180, 120, 40, 0.85)';
-            foodItem.style.width = `${Math.random() * 40 + 20}px`;
-            foodItem.style.height = `${Math.random() * 25 + 15}px`;
-            foodItem.style.borderRadius = '50%';
-            foodItem.style.left = `${Math.random() * 60 + 20}%`;
-            foodItem.style.top = `${Math.random() * 60 + 20}%`;
-            foodItem.style.transform = `rotate(${Math.random() * 360}deg)`;
-            foodItem.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
-            
-            // 添加食物纹理
-            const texture = document.createElement('div');
-            texture.style.position = 'absolute';
-            texture.style.top = '20%';
-            texture.style.left = '20%';
-            texture.style.width = '60%';
-            texture.style.height = '60%';
-            texture.style.backgroundColor = 'rgba(150, 100, 50, 0.6)';
-            texture.style.borderRadius = '50%';
-            
-            foodItem.appendChild(texture);
-            servingPlate.appendChild(foodItem);
-        }
-        
-        // 添加装饰元素 - 点缀的香草
-        for (let i = 0; i < 15; i++) {
-            const herb = document.createElement('div');
-            herb.style.position = 'absolute';
-            herb.style.backgroundColor = 'rgba(0, 100, 0, 0.8)';
-            herb.style.width = '2px';
-            herb.style.height = `${Math.random() * 8 + 3}px`;
-            herb.style.left = `${Math.random() * 80 + 10}%`;
-            herb.style.top = `${Math.random() * 80 + 10}%`;
-            herb.style.transform = `rotate(${Math.random() * 360}deg)`;
-            servingPlate.appendChild(herb);
-        }
-        
-        gameArea.appendChild(servingPlate);
-        
-        // 添加游戏名称和指示文本
-        const gameTitle = document.createElement('div');
-        gameTitle.textContent = '上菜游戏';
-        gameTitle.style.position = 'absolute';
-        gameTitle.style.top = '10px';
-        gameTitle.style.left = '0';
-        gameTitle.style.width = '100%';
-        gameTitle.style.textAlign = 'center';
-        gameTitle.style.fontSize = '24px';
-        gameTitle.style.fontWeight = 'bold';
-        gameTitle.style.color = '#333';
-        gameTitle.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-        gameArea.appendChild(gameTitle);
-        
-        const gameInstruction = document.createElement('div');
-        gameInstruction.textContent = '装饰盘子并为顾客上菜以获得分数!';
-        gameInstruction.style.position = 'absolute';
-        gameInstruction.style.bottom = '10px';
-        gameInstruction.style.left = '0';
-        gameInstruction.style.width = '100%';
-        gameInstruction.style.textAlign = 'center';
-        gameInstruction.style.fontSize = '16px';
-        gameInstruction.style.color = '#333';
-        gameInstruction.style.padding = '10px';
-        gameInstruction.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-        gameArea.appendChild(gameInstruction);
-        
-        fullOverlay.appendChild(gameArea);
-        
-        // 创建控制区域 (油温控制滑块和按钮)
-        const controlsArea = document.createElement('div');
-        controlsArea.style.padding = '15px';
-        controlsArea.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-        controlsArea.style.borderRadius = '10px';
-        
-        // 油温控制
-        const tempLabel = document.createElement('div');
-        tempLabel.textContent = '油温控制:';
-        tempLabel.style.marginBottom = '10px';
-        tempLabel.style.fontWeight = 'bold';
-        tempLabel.style.fontSize = '18px';
-        tempLabel.style.color = '#333';
-        
-        const tempSlider = document.createElement('input');
-        tempSlider.type = 'range';
-        tempSlider.min = '0';
-        tempSlider.max = '100';
-        tempSlider.value = '50';
-        tempSlider.style.width = '100%';
-        tempSlider.style.height = '20px';
-        tempSlider.style.marginBottom = '20px';
-        
-        // 按钮区域
-        const buttonsArea = document.createElement('div');
-        buttonsArea.style.display = 'flex';
-        buttonsArea.style.justifyContent = 'space-between';
-        
-        // 添加Pakora按钮
-        const addButton = document.createElement('button');
-        addButton.textContent = '添加Pakora';
-        addButton.style.padding = '12px 20px';
-        addButton.style.backgroundColor = '#4CAF50';
-        addButton.style.color = 'white';
-        addButton.style.border = 'none';
-        addButton.style.borderRadius = '20px';
-        addButton.style.cursor = 'pointer';
-        addButton.style.fontWeight = 'bold';
-        addButton.style.fontSize = '16px';
-        addButton.style.flex = '1';
-        addButton.style.margin = '0 5px';
-        addButton.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        addButton.style.transition = 'all 0.2s ease';
-        
-        // 翻转按钮
-        const flipButton = document.createElement('button');
-        flipButton.textContent = '翻转';
-        flipButton.style.padding = '12px 20px';
-        flipButton.style.backgroundColor = '#FFA500';
-        flipButton.style.color = 'white';
-        flipButton.style.border = 'none';
-        flipButton.style.borderRadius = '20px';
-        flipButton.style.cursor = 'pointer';
-        flipButton.style.fontWeight = 'bold';
-        flipButton.style.fontSize = '16px';
-        flipButton.style.flex = '1';
-        flipButton.style.margin = '0 5px';
-        flipButton.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        flipButton.style.transition = 'all 0.2s ease';
-        
-        // 取出按钮
-        const removeButton = document.createElement('button');
-        removeButton.textContent = '取出';
-        removeButton.style.padding = '12px 20px';
-        removeButton.style.backgroundColor = '#f44336';
-        removeButton.style.color = 'white';
-        removeButton.style.border = 'none';
-        removeButton.style.borderRadius = '20px';
-        removeButton.style.cursor = 'pointer';
-        removeButton.style.fontWeight = 'bold';
-        removeButton.style.fontSize = '16px';
-        removeButton.style.flex = '1';
-        removeButton.style.margin = '0 5px';
-        removeButton.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        removeButton.style.transition = 'all 0.2s ease';
-        
-        // 添加悬浮效果
-        addButton.onmouseover = () => { addButton.style.transform = 'scale(1.05)'; };
-        addButton.onmouseout = () => { addButton.style.transform = 'scale(1)'; };
-        flipButton.onmouseover = () => { flipButton.style.transform = 'scale(1.05)'; };
-        flipButton.onmouseout = () => { flipButton.style.transform = 'scale(1)'; };
-        removeButton.onmouseover = () => { removeButton.style.transform = 'scale(1.05)'; };
-        removeButton.onmouseout = () => { removeButton.style.transform = 'scale(1)'; };
-        
-        // 添加按钮到按钮区域
-        buttonsArea.appendChild(addButton);
-        buttonsArea.appendChild(flipButton);
-        buttonsArea.appendChild(removeButton);
-        
-        // 添加元素到控制区域
-        controlsArea.appendChild(tempLabel);
-        controlsArea.appendChild(tempSlider);
-        controlsArea.appendChild(buttonsArea);
-        
-        // 添加控制区域到容器
-        fullOverlay.appendChild(controlsArea);
-        
-        // 添加事件监听器
-        addButton.addEventListener('click', () => this.addScore(10));
-        flipButton.addEventListener('click', () => this.addScore(5));
-        removeButton.addEventListener('click', () => this.addScore(15));
-    }
-    
-    // 设置背景视频
-    setBackgroundVideo(videoElement) {
-        this.backgroundVideo = videoElement;
-    }
-    
+
     // 启动游戏
     start() {
-        console.log('启动游戏F');
-        this.isGameActive = true;
-        this.score = 0;
-        this.timeLeft = 70;
-        this.updateScore();
+        console.log("游戏F开始启动");
         
-        // 启动计时器
-        this.timer = setInterval(() => {
-            this.timeLeft--;
-            if (this.timerElement) {
-                this.timerElement.textContent = `${this.timeLeft}秒`;
+        if (this.isRunning) {
+            console.log("游戏F已经在运行中");
+            return;
+        }
+        
+        this.isRunning = true;
+        
+        // 再次检查容器是否存在，如果不存在则创建
+        if (!this.container) {
+            console.warn("游戏F容器不存在，尝试重新获取");
+            
+            // 尝试重新获取容器
+            this.container = document.getElementById('gameF');
+            
+            if (!this.container) {
+                console.warn("再次尝试获取游戏F容器失败，创建新容器");
+                this.container = document.createElement('div');
+                this.container.id = 'gameF';
+                this.container.className = 'game-container';
+                this.container.style.position = 'absolute';
+                this.container.style.top = '0';
+                this.container.style.left = '0';
+                this.container.style.width = '100%';
+                this.container.style.height = '100%';
+                this.container.style.zIndex = '999999';
+                this.container.style.visibility = 'visible';
+                this.container.style.display = 'block';
+                
+                document.body.appendChild(this.container);
+                console.log("已创建新的游戏F容器并添加到body");
+            } else {
+                console.log("成功获取到了游戏F容器");
+            }
+        }
+        
+        // 确保容器可见且有合适的z-index
+        this.container.style.display = 'block';
+        this.container.style.zIndex = '999999';
+        this.container.style.visibility = 'visible';
+        this.container.style.opacity = '1';
+        this.container.style.pointerEvents = 'auto';
+        
+        // 添加!important以确保样式被应用
+        this.container.setAttribute('style', 
+            'display: block !important; ' +
+            'z-index: 999999 !important; ' +
+            'position: absolute !important; ' +
+            'top: 0 !important; ' +
+            'left: 0 !important; ' +
+            'width: 100% !important; ' +
+            'height: 100% !important; ' +
+            'visibility: visible !important; ' +
+            'opacity: 1 !important; ' + 
+            'pointer-events: auto !important;');
+            
+        console.log("游戏F容器样式已设置:", 
+            'display=' + window.getComputedStyle(this.container).display, 
+            'zIndex=' + window.getComputedStyle(this.container).zIndex);
+        
+        // 清空容器内容
+        this.container.innerHTML = '';
+        
+        // 加载Eid礼物游戏HTML
+        this.loadEidGiftGameHTML();
+        
+        console.log("游戏F启动完成");
+    }
+    
+    // 加载Eid礼物游戏HTML
+    loadEidGiftGameHTML() {
+        // 创建游戏容器
+        const gameContainer = document.createElement('div');
+        gameContainer.id = 'eid-gift-game';
+        gameContainer.style.width = '75%'; // 缩小到75%宽度
+        gameContainer.style.height = '75%'; // 缩小到75%高度
+        gameContainer.style.position = 'absolute';
+        gameContainer.style.top = '50%'; // 垂直居中
+        gameContainer.style.left = '50%'; // 水平居中
+        gameContainer.style.transform = 'translate(-50%, -50%)'; // 确保完全居中
+        gameContainer.style.zIndex = '1000';
+        // 更透明的背景
+        gameContainer.style.backgroundColor = 'rgba(26, 71, 42, 0.4)'; // 降低不透明度至0.4
+        gameContainer.style.overflow = 'auto';
+        gameContainer.style.fontFamily = "'Montserrat', sans-serif";
+        gameContainer.style.borderRadius = '15px'; // 添加圆角
+        gameContainer.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.3)'; // 添加阴影提高可见度
+        
+        // 添加样式
+        const styleTag = document.createElement('style');
+        styleTag.textContent = `
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+            
+            #eid-gift-game {
+                /* 更透明的渐变背景 */
+                background: linear-gradient(135deg, rgba(26, 71, 42, 0.4), rgba(45, 90, 64, 0.4));
+                color: #fff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
             
-            if (this.timeLeft <= 0) {
-                this.complete();
+            .header {
+                /* 更透明的标题栏 */
+                background: linear-gradient(to bottom, rgba(0, 100, 0, 0.5), rgba(0, 80, 0, 0.4));
+                width: 100%;
+                text-align: center;
+                padding: 20px 0;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                position: relative;
+                overflow: hidden;
+                border-bottom: 3px solid gold;
+                border-radius: 15px 15px 0 0; /* 圆角顶部 */
             }
-        }, 1000);
-    }
-    
-    // 结束游戏
-    end() {
-        console.log('结束游戏F');
-        this.isGameActive = false;
+            
+            h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                color: gold;
+                text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+                letter-spacing: 1px;
+                position: relative;
+                z-index: 2;
+            }
+            
+            .subtitle {
+                color: white;
+                font-size: 1.2rem;
+                margin-top: 10px;
+                text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+                position: relative;
+                z-index: 2;
+            }
+            
+            .container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+                max-width: 1200px;
+                width: 100%;
+                position: relative;
+                z-index: 2;
+            }
+            
+            .gift-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 30px;
+                margin-bottom: 30px;
+                perspective: 1000px;
+            }
+            
+            .gift {
+                width: 120px; /* 调整礼品盒大小 */
+                height: 120px;
+                cursor: pointer;
+                position: relative;
+                border-radius: 10px;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 
+                            inset 0 -5px 15px rgba(0, 0, 0, 0.3),
+                            inset 0 5px 15px rgba(255, 255, 255, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 24px;
+                transition: transform 0.6s, box-shadow 0.6s;
+                transform-style: preserve-3d;
+                background-size: 100% 100%;
+                background-color: transparent;
+                animation: float 3s infinite ease-in-out;
+                transform: perspective(800px) rotateY(5deg) rotateX(5deg);
+            }
+            
+            @keyframes float {
+                0%, 100% { transform: perspective(800px) translateY(0) rotateY(5deg) rotateX(5deg); }
+                50% { transform: perspective(800px) translateY(-15px) rotateY(8deg) rotateX(2deg); }
+            }
+            
+            .gift:hover {
+                transform: scale(1.08) translateY(-15px) rotateY(15deg) rotateX(-5deg);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
+                            inset 0 -5px 15px rgba(0, 0, 0, 0.3),
+                            inset 0 5px 15px rgba(255, 255, 255, 0.2);
+                animation-play-state: paused;
+            }
+            
+            .gift:active {
+                transform: scale(0.95);
+            }
+            
+            .gift.opened {
+                pointer-events: none;
+                opacity: 0.7;
+                animation: openGift 1s forwards;
+            }
+            
+            @keyframes openGift {
+                0% { transform: perspective(800px) rotateY(0); }
+                30% { transform: perspective(800px) rotateY(180deg) scale(1.2); }
+                60% { transform: perspective(800px) rotateY(180deg) scale(0.8); }
+                100% { transform: perspective(800px) rotateY(180deg) scale(1); opacity: 0.7; }
+            }
+            
+            .gift.disabled {
+                pointer-events: none;
+                opacity: 0.5;
+                cursor: not-allowed;
+                animation-play-state: paused;
+                filter: grayscale(70%);
+            }
+            
+            .gift-front, .gift-back {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                backface-visibility: hidden;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .gift-front {
+                background-color: rgba(0, 0, 0, 0.2);
+                z-index: 2;
+                box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.3), 
+                            inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+            }
+            
+            .gift-back {
+                transform: rotateY(180deg);
+                background-color: rgba(255, 223, 0, 0.2);
+                color: gold;
+                font-size: 40px;
+            }
+            
+            /* 更透明的礼品盒渐变 */
+            .gift1 .gift-front { background: linear-gradient(135deg, rgba(0, 136, 0, 0.7), rgba(0, 100, 0, 0.7), rgba(0, 77, 0, 0.7)); }
+            .gift2 .gift-front { background: linear-gradient(135deg, rgba(255, 215, 0, 0.7), rgba(221, 170, 0, 0.7), rgba(187, 136, 0, 0.7)); }
+            .gift3 .gift-front { background: linear-gradient(135deg, rgba(50, 205, 50, 0.7), rgba(34, 139, 34, 0.7), rgba(23, 105, 23, 0.7)); }
+            .gift4 .gift-front { background: linear-gradient(135deg, rgba(160, 82, 45, 0.7), rgba(139, 69, 19, 0.7), rgba(105, 53, 15, 0.7)); }
+            .gift5 .gift-front { background: linear-gradient(135deg, rgba(0, 136, 0, 0.7), rgba(0, 100, 0, 0.7), rgba(0, 77, 0, 0.7)); }
+            .gift6 .gift-front { background: linear-gradient(135deg, rgba(255, 215, 0, 0.7), rgba(221, 170, 0, 0.7), rgba(187, 136, 0, 0.7)); }
+            .gift7 .gift-front { background: linear-gradient(135deg, rgba(50, 205, 50, 0.7), rgba(34, 139, 34, 0.7), rgba(23, 105, 23, 0.7)); }
+            .gift8 .gift-front { background: linear-gradient(135deg, rgba(160, 82, 45, 0.7), rgba(139, 69, 19, 0.7), rgba(105, 53, 15, 0.7)); }
+            .gift9 .gift-front { background: linear-gradient(135deg, rgba(0, 136, 0, 0.7), rgba(0, 100, 0, 0.7), rgba(0, 77, 0, 0.7)); }
+            
+            .info-container {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 600px;
+                margin-top: 20px;
+                animation: fadeIn 1s;
+            }
+            
+            .info-box {
+                padding: 12px 20px;
+                background: rgba(255, 255, 255, 0.15);
+                border: 2px solid gold;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                font-size: 1.1rem;
+                backdrop-filter: blur(5px);
+                transition: transform 0.3s, box-shadow 0.3s;
+            }
+            
+            .restart-btn {
+                margin-top: 30px;
+                padding: 12px 25px;
+                background: linear-gradient(145deg, #008800, #006600);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 1.1rem;
+                font-weight: bold;
+                transition: all 0.3s;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), 0 5px 5px rgba(0, 0, 0, 0.1);
+            }
+            
+            .restart-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            }
+            
+            .modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                /* 更透明的模态框背景 */
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 100;
+                justify-content: center;
+                align-items: center;
+                perspective: 1000px;
+            }
+            
+            .modal-content {
+                background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                padding: 30px;
+                border-radius: 20px;
+                max-width: 450px;
+                width: 80%;
+                text-align: center;
+                position: relative;
+                box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
+                border: 3px solid gold;
+                transform-style: preserve-3d;
+                animation: openModal 0.8s forwards;
+                color: #333;
+            }
+            
+            .prize-emoji {
+                font-size: 70px;
+                margin: 20px auto;
+                animation: wiggle 2s infinite ease-in-out;
+                display: inline-block;
+            }
+            
+            .complete-btn {
+                margin-top: 30px;
+                padding: 15px 30px;
+                background: linear-gradient(145deg, #c00000, #800000);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 1.2rem;
+                font-weight: bold;
+                transition: all 0.3s;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+            
+            .complete-btn:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            }
+        `;
+        document.head.appendChild(styleTag);
         
-        // 清除计时器
-        if (this.timer) {
-            clearInterval(this.timer);
-            this.timer = null;
+        // 创建游戏HTML结构 - 不包含完成按钮
+        gameContainer.innerHTML = `
+            <div class="stars" id="stars"></div>
+            <div class="confetti" id="confetti"></div>
+            
+            <div class="header">
+                <h1>Eid al-Fitr Gift Game</h1>
+                <div class="subtitle">Open gifts to discover Eid surprises!</div>
+            </div>
+            
+            <div class="container">
+                <div class="info-container">
+                    <div class="info-box">
+                        Gifts Opened: <span id="opened-count">0</span> / <span id="total-count">0</span>
+                    </div>
+                    <div class="info-box">
+                        Remaining: <span id="remaining-count">3</span> / 3
+                    </div>
+                </div>
+                
+                <div class="gift-container" id="gift-container">
+                    <!-- Gifts will be added dynamically -->
+                </div>
+                
+                <button class="restart-btn" id="restart-btn">Restart Game</button>
+                <!-- 完成按钮已被移除 -->
+            </div>
+            
+            <div class="modal" id="prize-modal">
+                <div class="modal-content">
+                    <span class="close-btn" id="close-modal">&times;</span>
+                    <h2 class="prize-title" id="prize-title">Congratulations!</h2>
+                    <div class="prize-emoji" id="prize-emoji">🎁</div>
+                    <p class="prize-description" id="prize-description">You have won a prize!</p>
+                </div>
+            </div>
+        `;
+        
+        // 将游戏容器添加到主容器
+        if (this.container) {
+            this.container.appendChild(gameContainer);
+            console.log("游戏F: Eid礼物游戏HTML已加载");
+        } else {
+            console.error("游戏F容器仍然不存在，无法加载HTML");
         }
+        
+        // 初始化游戏逻辑
+        this.initEidGameLogic();
     }
     
-    // 游戏完成
+    // 初始化Eid游戏逻辑
+    initEidGameLogic() {
+        // 创建星星背景 - 更多星星，提高可见度
+        const starsContainer = document.getElementById('stars');
+        if (starsContainer) {
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = `star star${Math.ceil(Math.random() * 3)}`;
+                star.style.position = 'absolute';
+                star.style.width = (i % 3 + 2) + 'px';
+                star.style.height = (i % 3 + 2) + 'px';
+                star.style.backgroundColor = 'gold';
+                star.style.borderRadius = '50%';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animation = 'twinkle 3s infinite alternate';
+                star.style.animationDelay = Math.random() * 5 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 礼物数据 - 20种不同的礼物选项
+        const allPrizes = [
+            {
+                title: 'Delicious Baklava',
+                emoji: '🍯',
+                description: 'You won a tray of sweet baklava! This layered pastry dessert is made of filo pastry, filled with chopped nuts, and sweetened with syrup or honey.'
+            },
+            {
+                title: 'Traditional Dates',
+                emoji: '🌴',
+                description: 'You found a box of premium dates! Dates are a traditional fruit enjoyed during Eid al-Fitr, symbolizing sweetness and prosperity.'
+            },
+            {
+                title: 'Eid Greeting Cards',
+                emoji: '✉️',
+                description: 'You received beautiful Eid greeting cards! Share them with your loved ones to spread the joy and blessings of Eid al-Fitr.'
+            },
+            {
+                title: 'Eid Mubarak!',
+                emoji: '🌙',
+                description: '"May Allah accept your good deeds, forgive your transgressions and ease the suffering of all people around the globe." - Eid Mubarak!'
+            },
+            {
+                title: 'Henna Art Kit',
+                emoji: '🎨',
+                description: 'You won a beautiful henna art kit! Henna decoration is a popular tradition during Eid celebrations.'
+            },
+            {
+                title: 'Sweet Maamoul Cookies',
+                emoji: '🍪',
+                description: 'You discovered traditional Maamoul cookies! These shortbread pastries filled with dates or nuts are a delicious Eid treat.'
+            },
+            {
+                title: 'Eid Wisdom',
+                emoji: '📖',
+                description: '"He who gives up his desires for the sake of Allah, Allah will fulfill his hopes." - A beautiful reminder during this blessed time.'
+            },
+            {
+                title: 'Islamic Book Collection',
+                emoji: '📚',
+                description: 'You received a collection of Islamic books about the teachings of the Quran and the life of Prophet Muhammad (PBUH). Knowledge is a gift that lasts forever.'
+            },
+            {
+                title: 'Prayer Beads',
+                emoji: '📿',
+                description: 'You found beautiful prayer beads (Misbaha)! These beads are used to keep count while reciting prayers and dhikr.'
+            }
+        ];
+        
+        // 盒子设置
+        const boxes = [
+            { id: 1, class: 'gift1', label: '1' },
+            { id: 2, class: 'gift2', label: '2' },
+            { id: 3, class: 'gift3', label: '3' },
+            { id: 4, class: 'gift4', label: '4' },
+            { id: 5, class: 'gift5', label: '5' },
+            { id: 6, class: 'gift6', label: '6' },
+            { id: 7, class: 'gift7', label: '7' },
+            { id: 8, class: 'gift8', label: '8' },
+            { id: 9, class: 'gift9', label: '9' }
+        ];
+        
+        // 游戏变量
+        let openedGifts = 0;
+        let remainingOpens = 3;
+        const totalGifts = boxes.length;
+        let currentPrizes = [];
+        
+        // DOM元素
+        const giftContainer = document.getElementById('gift-container');
+        const modal = document.getElementById('prize-modal');
+        const closeModal = document.getElementById('close-modal');
+        const prizeTitle = document.getElementById('prize-title');
+        const prizeEmoji = document.getElementById('prize-emoji');
+        const prizeDescription = document.getElementById('prize-description');
+        const restartBtn = document.getElementById('restart-btn');
+        const openedCountDisplay = document.getElementById('opened-count');
+        const totalCountDisplay = document.getElementById('total-count');
+        const remainingCountDisplay = document.getElementById('remaining-count');
+        const confettiContainer = document.getElementById('confetti');
+        
+        // 更新计数器
+        if (totalCountDisplay) totalCountDisplay.textContent = totalGifts;
+        if (openedCountDisplay) openedCountDisplay.textContent = openedGifts;
+        if (remainingCountDisplay) remainingCountDisplay.textContent = remainingOpens;
+        
+        // 创建彩纸效果
+        const createConfetti = () => {
+            if (!confettiContainer) return;
+            
+            confettiContainer.innerHTML = '';
+            confettiContainer.style.display = 'block';
+            confettiContainer.style.position = 'fixed';
+            confettiContainer.style.top = '0';
+            confettiContainer.style.left = '0';
+            confettiContainer.style.width = '100%';
+            confettiContainer.style.height = '100%';
+            confettiContainer.style.pointerEvents = 'none';
+            confettiContainer.style.zIndex = '1';
+            
+            const colors = ['#FFD700', '#006400', '#228B22', '#8B4513', '#FFFFFF', '#228B22'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 15 + 10 + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.top = '-20px';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.opacity = Math.random() + 0.5;
+                confetti.style.animation = 'fall ' + (Math.random() * 3 + 2) + 's linear forwards';
+                
+                // 添加动画关键帧
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fall {
+                        0% { transform: translateY(0) rotate(0deg); }
+                        100% { transform: translateY(1000px) rotate(360deg); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                confettiContainer.appendChild(confetti);
+            }
+            
+            // 彩纸动画完成后停止
+            setTimeout(() => {
+                confettiContainer.style.display = 'none';
+            }, 5000);
+        };
+        
+        // 模态窗口动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes openModal {
+                0% { opacity: 0; transform: rotateX(-90deg); }
+                100% { opacity: 1; transform: rotateX(0); }
+            }
+            
+            @keyframes wiggle {
+                0%, 100% { transform: rotate(-5deg); }
+                50% { transform: rotate(5deg); }
+            }
+            
+            @keyframes twinkle {
+                0% { opacity: 0.2; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.5); }
+                100% { opacity: 0.3; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 保存对GameF实例的引用
+        const self = this;
+        
+        // 初始化游戏
+        const initGame = () => {
+            if (!giftContainer) return;
+            
+            giftContainer.innerHTML = '';
+            openedGifts = 0;
+            remainingOpens = 3;
+            
+            if (openedCountDisplay) openedCountDisplay.textContent = openedGifts;
+            if (remainingCountDisplay) remainingCountDisplay.textContent = remainingOpens;
+            
+            // 从20个选项中随机选择9个奖品
+            currentPrizes = [];
+            const shuffledPrizes = [...allPrizes].sort(() => 0.5 - Math.random());
+            for (let i = 0; i < 9; i++) {
+                currentPrizes.push(shuffledPrizes[i % shuffledPrizes.length]);
+            }
+            
+            // 创建礼物元素
+            boxes.forEach((box, index) => {
+                const giftElement = document.createElement('div');
+                giftElement.className = `gift ${box.class}`;
+                giftElement.dataset.id = box.id;
+                giftElement.dataset.prizeIndex = index;
+                
+                // 创建正面
+                const giftFront = document.createElement('div');
+                giftFront.className = 'gift-front';
+                giftFront.textContent = box.label;
+                
+                // 创建背面
+                const giftBack = document.createElement('div');
+                giftBack.className = 'gift-back';
+                giftBack.textContent = '🎁';
+                
+                // 创建丝带元素
+                const giftRibbon = document.createElement('div');
+                giftRibbon.className = 'gift-ribbon';
+                giftRibbon.innerHTML = `
+                    <div class="ribbon-h"></div>
+                    <div class="ribbon-v"></div>
+                    <div class="ribbon-circle"></div>
+                `;
+                
+                // 组装礼物
+                giftElement.appendChild(giftFront);
+                giftElement.appendChild(giftBack);
+                giftElement.appendChild(giftRibbon);
+                
+                giftElement.addEventListener('click', handleGiftClick);
+                
+                giftContainer.appendChild(giftElement);
+                
+                // 添加不同的动画延迟
+                giftElement.style.animationDelay = (index * 0.2) + 's';
+            });
+        };
+        
+        // 处理礼物点击 - 添加自动完成逻辑
+        function handleGiftClick() {
+            // 函数内部使用 self 替代 this 来引用 GameF 实例
+            if (remainingOpens <= 0) return;
+            
+            if (!this.classList.contains('opened') && !this.classList.contains('disabled')) {
+                // 更新计数器
+                openedGifts++;
+                remainingOpens--;
+                
+                if (openedCountDisplay) openedCountDisplay.textContent = openedGifts;
+                if (remainingCountDisplay) remainingCountDisplay.textContent = remainingOpens;
+                
+                // 打开礼物
+                this.classList.add('opened');
+                
+                // 显示奖品
+                const prizeIndex = this.dataset.prizeIndex;
+                const prize = currentPrizes[prizeIndex];
+                
+                if (prizeTitle) prizeTitle.textContent = prize.title;
+                if (prizeEmoji) prizeEmoji.textContent = prize.emoji;
+                if (prizeDescription) prizeDescription.textContent = prize.description;
+                
+                // 显示模态窗口
+                if (modal) modal.style.display = 'flex';
+                
+                // 创建彩纸动画
+                createConfetti();
+                
+                // 如果没有更多次数，禁用所有剩余礼物
+                if (remainingOpens <= 0) {
+                    document.querySelectorAll('.gift:not(.opened)').forEach(gift => {
+                        gift.classList.add('disabled');
+                    });
+                    
+                    // 当用完所有尝试机会时，自动触发完成游戏
+                    setTimeout(() => {
+                        if (typeof self.onCompleteCallback === 'function') {
+                            self.onCompleteCallback(self.score);
+                        }
+                        self.complete();
+                    }, 3000); // 给玩家3秒时间查看最后打开的礼物，然后完成游戏
+                }
+            }
+        }
+        
+        // 关闭模态窗口
+        if (closeModal && modal) {
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            // 点击模态窗口外部时关闭
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 重新开始游戏
+        if (restartBtn) {
+            restartBtn.addEventListener('click', function() {
+                initGame();
+            });
+        }
+        
+        // 初始加载游戏
+        initGame();
+    }
+    
+    // 完成游戏
     complete() {
-        console.log('游戏F完成');
-        this.end();
+        if (!this.isRunning) {
+            return;
+        }
         
-        // 调用所有完成回调
-        this.gameCompleteCallbacks.forEach(callback => callback(this.score));
-    }
-    
-    // 添加分数
-    addScore(points) {
-        if (!this.isGameActive) return;
+        console.log("游戏F完成");
+        this.isRunning = false;
         
-        this.score += points;
-        this.updateScore();
+        // 清空容器
+        if (this.container) {
+            this.container.innerHTML = '';
+            this.container.style.display = 'none';
+        }
         
-        // 如果分数达到100，提前完成游戏
-        if (this.score >= 100) {
-            this.complete();
+        // 调用完成回调
+        if (typeof this.onCompleteCallback === 'function') {
+            this.onCompleteCallback(this.score);
         }
     }
     
-    // 更新分数显示
-    updateScore() {
-        if (this.scoreElement) {
-            this.scoreElement.textContent = `得分: ${this.score}`;
-        }
+    // 设置完成回调
+    onComplete(callback) {
+        this.onCompleteCallback = callback;
     }
     
-    // 添加游戏完成回调
+    // 为兼容性添加onGameComplete方法
     onGameComplete(callback) {
-        if (typeof callback === 'function') {
-            this.gameCompleteCallbacks.push(callback);
-        }
-        return this; // 支持链式调用
+        this.onCompleteCallback = callback;
     }
+    
+    // 获取当前分数
+    getScore() {
+        return this.score;
+    }
+}
+
+// 导出游戏类
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = GameF;
 } 
