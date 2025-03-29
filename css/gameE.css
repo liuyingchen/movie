@@ -1,0 +1,310 @@
+/* 游戏E - 炸制Pakora游戏的样式 */
+.gameE-body {
+    font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+    background-color: #FFE6E0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    color: #6D4B33;
+}
+
+.gameE-game-container {
+    width: 90%;
+    max-width: 800px;
+    background-color: #FFF5F0;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(185, 110, 90, 0.2);
+    padding: 20px;
+    position: relative;
+}
+
+.gameE-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 3px dashed #FFB394;
+    margin-bottom: 20px;
+}
+
+.gameE-time {
+    background-color: #FF8C66;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.gameE-score {
+    background-color: #8BD9FF;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.gameE-frying-area {
+    position: relative;
+    height: 300px;
+    background-color: #FFC85C;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 5px solid #B06B31;
+}
+
+.gameE-oil {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 70%;
+    background-color: #FFA012;
+    transition: background-color 0.5s;
+}
+
+.gameE-oil-bubbles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.gameE-bubble {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: gameE-bubble 2s infinite;
+}
+
+@keyframes gameE-bubble {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translateY(-100px) scale(0.5);
+        opacity: 0;
+    }
+}
+
+.gameE-pakora {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: #B06B31;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.3s, background-color 0.3s;
+    z-index: 10;
+}
+
+.gameE-pakora.cooked {
+    background-color: #D68C47;
+}
+
+.gameE-pakora.burnt {
+    background-color: #703F1F;
+}
+
+.gameE-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.gameE-temperature-control {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.gameE-temperature-label {
+    font-weight: bold;
+    width: 120px;
+}
+
+.gameE-temperature-slider {
+    flex-grow: 1;
+    height: 20px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, #87CEEB, #FF5733);
+    border-radius: 10px;
+    outline: none;
+}
+
+.gameE-temperature-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #FF8C66;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.gameE-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.gameE-button {
+    padding: 12px 25px;
+    border-radius: 25px;
+    border: none;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+
+.gameE-button:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.2);
+}
+
+.gameE-add-btn {
+    background-color: #77DD77;
+    color: white;
+}
+
+.gameE-flip-btn {
+    background-color: #FFB347;
+    color: white;
+}
+
+.gameE-remove-btn {
+    background-color: #FF6961;
+    color: white;
+}
+
+.gameE-ready-pakoras {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 20px;
+    min-height: 70px;
+    background-color: #FFF0E0;
+    border-radius: 15px;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.gameE-done-pakora {
+    width: 60px;
+    height: 60px;
+    background-color: #D68C47;
+    border-radius: 50%;
+    border: 3px solid #B06B31;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+
+.gameE-perfect {
+    position: relative;
+}
+
+.gameE-perfect::after {
+    content: "★";
+    position: absolute;
+    top: -10px;
+    right: -5px;
+    color: gold;
+    font-size: 24px;
+}
+
+.gameE-game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    z-index: 100;
+    display: none;
+}
+
+.gameE-result-box {
+    background-color: #FFF5F0;
+    border-radius: 15px;
+    padding: 20px;
+    width: 80%;
+    text-align: center;
+    color: #6D4B33;
+}
+
+.gameE-stars {
+    margin: 20px 0;
+    font-size: 40px;
+    letter-spacing: 5px;
+}
+
+.gameE-star {
+    color: #d9d9d9;
+}
+
+.gameE-star.earned {
+    color: gold;
+}
+
+.gameE-restart-btn {
+    background-color: #8BD9FF;
+    color: white;
+    margin-top: 20px;
+}
+
+#gameE {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 10; /* 确保在视频之上 */
+}
+
+/* 游戏背景容器 - 设置半透明背景 */
+.game-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5); /* 半透明背景 */
+    z-index: -1; /* 背景应该在游戏元素之下 */
+}
+
+/* 游戏主容器 */
+.game-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* 确保在背景之上 */
+}
+
+/* 游戏界面元素应该设置透明背景 */
+.game-element {
+    background-color: rgba(255, 200, 100, 0.7); /* 使用半透明背景 */
+    border-radius: 10px;
+} 
