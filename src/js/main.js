@@ -35,6 +35,15 @@ class GameFlow {
                 // 隐藏开始屏幕
                 startScreen.style.display = 'none';
                 
+                // 获取背景视频元素
+                const backgroundVideo = document.getElementById('backgroundVideo');
+                if (backgroundVideo) {
+                    // 确保视频不是静音状态
+                    backgroundVideo.muted = false;
+                    backgroundVideo.volume = 1.0;
+                    console.log('设置背景视频非静音');
+                }
+                
                 // 显示加载指示器
                 this.gameManager.showLoading();
                 
@@ -47,6 +56,14 @@ class GameFlow {
                     
                     // 开始游戏流程
                     this.startFlow();
+                    
+                    // 再次确认视频非静音
+                    setTimeout(() => {
+                        if (backgroundVideo) {
+                            backgroundVideo.muted = false;
+                            console.log('延迟确认背景视频非静音，当前状态:', backgroundVideo.muted);
+                        }
+                    }, 1000);
                 } catch (error) {
                     console.error('初始化失败:', error);
                     alert('游戏加载失败，请刷新页面重试。');

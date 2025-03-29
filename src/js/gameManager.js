@@ -89,8 +89,6 @@ class GameManager {
     // 启动游戏E（背景为视频A）
     startGameE() {
         console.log('启动游戏E，背景为视频A');
-        // 确保视频播放器不被隐藏，而是作为背景播放
-        // this.videoPlayer.hide(); // 注释掉这行，不隐藏视频
         
         // 显示游戏E容器
         if (this.gameEContainer) {
@@ -113,6 +111,9 @@ class GameManager {
             } catch (error) {
                 console.warn('设置背景视频失败:', error);
             }
+            
+            // 确保视频有声音
+            this.ensureVideoAudio();
         }
         
         // 启动游戏E
@@ -168,9 +169,14 @@ class GameManager {
                 videoElement.style.visibility = 'visible';
                 videoElement.style.display = 'block';
                 
+                // 确保视频非静音
+                videoElement.muted = false;
+                videoElement.volume = 1.0;
+                
                 console.log('视频背景样式设置为:', 
                     'zIndex=' + videoElement.style.zIndex, 
-                    'opacity=' + videoElement.style.opacity);
+                    'opacity=' + videoElement.style.opacity,
+                    'muted=' + videoElement.muted);
                     
                 // 确保视频在播放
                 if (videoElement.paused) {
@@ -179,32 +185,9 @@ class GameManager {
                     });
                 }
             }
-        }
-        
-        // 显示游戏F容器，但允许视频透过它显示
-        if (this.gameFContainer) {
-            // 使用内联样式确保游戏F容器可见且绝对透明
-            this.gameFContainer.setAttribute('style', 
-                'display: block !important; ' +
-                'z-index: 999999 !important; ' +
-                'position: absolute !important; ' +
-                'top: 0 !important; ' +
-                'left: 0 !important; ' +
-                'width: 100% !important; ' +
-                'height: 100% !important; ' +
-                'visibility: visible !important; ' +
-                'opacity: 1 !important; ' + 
-                'pointer-events: auto !important; ' +
-                'background-color: transparent !important;'); // 确保容器背景是透明的
             
-            // 添加active类
-            this.gameFContainer.classList.add('active');
-            
-            console.log('游戏F容器样式:', 
-                'display=' + window.getComputedStyle(this.gameFContainer).display, 
-                'zIndex=' + window.getComputedStyle(this.gameFContainer).zIndex);
-        } else {
-            console.error('游戏F容器不存在!');
+            // 确保视频有声音
+            this.ensureVideoAudio();
         }
         
         console.log('即将启动游戏F...');
@@ -290,5 +273,21 @@ class GameManager {
             this.hideAllGames();
             this.currentGame = null;
         }
+    }
+
+    /**
+     * 确保视频有声音
+     */
+    ensureVideoAudio() {
+        if (!this.videoPlayer) return;
+        
+        const videoElement = this.videoPlayer.getVideoElement();
+        if (!videoElement) return;
+        
+        // 解除视频静音
+        videoElement.muted = false;
+        videoElement.volume = 1.0;
+        
+        console.log('已确保视频非静音，当前静音状态:', videoElement.muted);
     }
 } 

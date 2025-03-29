@@ -6,8 +6,9 @@ class VideoPlayer {
         this.onTimeUpdateCallbacks = [];
         this.onEndedCallbacks = [];
         
-        // 默认将视频设为静音，以便自动播放
-        this.videoElement.muted = true;
+        // 默认将视频设为非静音，允许声音播放
+        this.videoElement.muted = false;
+        this.videoElement.volume = 1.0;
         
         // 事件监听
         this.videoElement.addEventListener('timeupdate', () => this.handleTimeUpdate());
@@ -40,6 +41,10 @@ class VideoPlayer {
         this.videoContainer.style.display = 'block';
         this.videoElement.style.zIndex = '1';
         
+        // 最小化修改：确保视频有声音
+        this.videoElement.muted = false;
+        this.videoElement.volume = 1.0;
+        
         // 使用catch来处理可能的播放失败
         const playPromise = this.videoElement.play();
         
@@ -49,6 +54,11 @@ class VideoPlayer {
                 console.log('尝试静音播放...');
                 this.videoElement.muted = true;
                 return this.videoElement.play();
+            }).then(() => {
+                // 播放成功后尝试重新启用声音
+                setTimeout(() => {
+                    this.videoElement.muted = false;
+                }, 1000);
             }).catch(error => {
                 console.error('即使静音也无法播放视频:', error);
             });
@@ -65,6 +75,10 @@ class VideoPlayer {
     playAsBackground() {
         console.log('将视频设置为背景播放');
         this.videoContainer.style.display = 'block';
+        
+        // 最小化修改：确保视频有声音
+        this.videoElement.muted = false;
+        this.videoElement.volume = 1.0;
         
         // 设置视频容器样式
         this.videoContainer.style.position = 'absolute';
@@ -88,6 +102,11 @@ class VideoPlayer {
                 console.log('尝试静音播放背景视频...');
                 this.videoElement.muted = true;
                 return this.videoElement.play();
+            }).then(() => {
+                // 播放成功后尝试重新启用声音
+                setTimeout(() => {
+                    this.videoElement.muted = false;
+                }, 1000);
             }).catch(error => {
                 console.error('即使静音也无法播放背景视频:', error);
             });
