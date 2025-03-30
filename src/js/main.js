@@ -16,8 +16,8 @@ class GameFlow {
         this.devMode = true;
         
         // 视频触发时间设置（秒）
-        this.gameETriggerTime = 5; // 降低为5秒，方便测试
-        this.gameFTriggerTime = 5; // 降低为5秒，方便测试
+        this.gameETriggerTime = 21; // 降低为5秒，方便测试
+        this.gameFTriggerTime = 66; // 降低为5秒，方便测试
     }
     
     // 初始化
