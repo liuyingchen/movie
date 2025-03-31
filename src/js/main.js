@@ -28,11 +28,40 @@ class GameFlow {
             // 初始化游戏管理器
             this.gameManager.init();
             
+            // 显示加载指示器
+            this.gameManager.showLoading();
+            
+            // 提前预加载所有视频
+            console.log('开始预加载所有视频...');
+            
+            try {
+                // 创建一个预加载视频A的Promise
+                const preloadVideoA = this.videoPlayer.preloadVideo(this.videoA);
+                
+                // 创建一个预加载视频B的Promise
+                const preloadVideoB = this.videoPlayer.preloadVideo(this.videoB);
+                
+                // 创建一个预加载视频C的Promise
+                const preloadVideoC = this.videoPlayer.preloadVideo(this.videoC);
+                
+                // 并行预加载所有视频
+                await Promise.all([preloadVideoA, preloadVideoB, preloadVideoC]);
+                
+                console.log('所有视频预加载完成');
+            } catch (preloadError) {
+                console.warn('视频预加载失败:', preloadError);
+                console.log('将在需要时再加载视频');
+            }
+            
+            // 预加载完成后隐藏加载指示器
+            this.gameManager.hideLoading();
+            
             // 开始游戏流程
             this.startFlow();
             
         } catch (error) {
             console.error('初始化失败:', error);
+            this.gameManager.hideLoading(); // 确保加载指示器不会一直显示
             alert('游戏加载失败，请刷新页面重试。');
         }
     }
@@ -50,8 +79,26 @@ class GameFlow {
         this.gameManager.showLoading();
         
         try {
-            // 加载视频A
-            await this.videoPlayer.loadVideo(this.videoA);
+            // 如果在init阶段已经预加载了视频，这里直接使用
+            // 直接设置视频源并加载，而不用等待完整的加载过程
+            const videoElement = this.videoPlayer.getVideoElement();
+            if (videoElement && videoElement.src !== this.videoA) {
+                videoElement.src = this.videoA;
+                // 快速加载检查
+                await new Promise((resolve) => {
+                    const checkLoaded = () => {
+                        if (videoElement.readyState >= 3) { // HAVE_FUTURE_DATA
+                            resolve();
+                        } else {
+                            setTimeout(checkLoaded, 100);
+                        }
+                    };
+                    checkLoaded();
+                });
+            } else {
+                // 如果未预加载，则正常加载视频A
+                await this.videoPlayer.loadVideo(this.videoA);
+            }
             
             // 隐藏加载指示器
             this.gameManager.hideLoading();
@@ -132,8 +179,25 @@ class GameFlow {
             // 清除之前的回调
             this.videoPlayer.clearCallbacks();
             
-            // 加载视频B
-            await this.videoPlayer.loadVideo(this.videoB);
+            // 如果在init阶段已经预加载了视频，这里直接使用
+            const videoElement = this.videoPlayer.getVideoElement();
+            if (videoElement && videoElement.src !== this.videoB) {
+                videoElement.src = this.videoB;
+                // 快速加载检查
+                await new Promise((resolve) => {
+                    const checkLoaded = () => {
+                        if (videoElement.readyState >= 3) { // HAVE_FUTURE_DATA
+                            resolve();
+                        } else {
+                            setTimeout(checkLoaded, 100);
+                        }
+                    };
+                    checkLoaded();
+                });
+            } else {
+                // 如果未预加载，则正常加载视频B
+                await this.videoPlayer.loadVideo(this.videoB);
+            }
             
             // 隐藏加载指示器
             this.gameManager.hideLoading();
@@ -186,8 +250,25 @@ class GameFlow {
             // 清除之前的回调
             this.videoPlayer.clearCallbacks();
             
-            // 加载视频C
-            await this.videoPlayer.loadVideo(this.videoC);
+            // 如果在init阶段已经预加载了视频，这里直接使用
+            const videoElement = this.videoPlayer.getVideoElement();
+            if (videoElement && videoElement.src !== this.videoC) {
+                videoElement.src = this.videoC;
+                // 快速加载检查
+                await new Promise((resolve) => {
+                    const checkLoaded = () => {
+                        if (videoElement.readyState >= 3) { // HAVE_FUTURE_DATA
+                            resolve();
+                        } else {
+                            setTimeout(checkLoaded, 100);
+                        }
+                    };
+                    checkLoaded();
+                });
+            } else {
+                // 如果未预加载，则正常加载视频C
+                await this.videoPlayer.loadVideo(this.videoC);
+            }
             
             // 隐藏加载指示器
             this.gameManager.hideLoading();
@@ -230,7 +311,7 @@ class GameFlow {
         endScreen.style.left = '0';
         endScreen.style.width = '100%';
         endScreen.style.height = '100%';
-        endScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        endScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
         endScreen.style.display = 'flex';
         endScreen.style.flexDirection = 'column';
         endScreen.style.justifyContent = 'center';
@@ -248,6 +329,7 @@ class GameFlow {
         const message = document.createElement('p');
         message.textContent = 'Friendship Forever!';
         message.style.fontSize = '3rem';
+        message.style.fontWeight = 'bold';
         message.style.marginBottom = '3rem';
         
         // 创建重新开始按钮

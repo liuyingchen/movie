@@ -348,4 +348,44 @@ class VideoPlayer {
     hideTextOverlay() {
         this.textOverlay.style.display = 'none';
     }
+    
+    // 预加载视频但不显示或播放
+    preloadVideo(videoPath) {
+        return new Promise((resolve, reject) => {
+            console.log('预加载视频:', videoPath);
+            
+            // 创建一个临时的video元素用于预加载
+            const tempVideo = document.createElement('video');
+            tempVideo.style.display = 'none'; // 隐藏元素
+            tempVideo.preload = 'auto'; // 设置预加载属性
+            
+            // 设置事件监听器
+            tempVideo.oncanplaythrough = () => {
+                console.log('视频预加载完成:', videoPath);
+                // 从DOM中移除临时视频元素
+                if (tempVideo.parentNode) {
+                    tempVideo.parentNode.removeChild(tempVideo);
+                }
+                resolve();
+            };
+            
+            tempVideo.onerror = (error) => {
+                console.error('视频预加载错误:', error);
+                // 从DOM中移除临时视频元素
+                if (tempVideo.parentNode) {
+                    tempVideo.parentNode.removeChild(tempVideo);
+                }
+                reject(error);
+            };
+            
+            // 设置视频源
+            tempVideo.src = videoPath;
+            
+            // 将临时视频元素添加到DOM中（但保持隐藏）
+            document.body.appendChild(tempVideo);
+            
+            // 开始加载
+            tempVideo.load();
+        });
+    }
 } 
