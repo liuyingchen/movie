@@ -270,7 +270,7 @@ class GameFlow {
             this.startFlow();
         });
         
-        // 组装结束画面
+        
         // endScreen.appendChild(title); // 注释掉这行，因为title变量已被注释
         endScreen.appendChild(message);
         // endScreen.appendChild(restartButton);
