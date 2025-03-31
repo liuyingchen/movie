@@ -16,8 +16,8 @@ class GameFlow {
         this.devMode = true;
         
         // 视频触发时间设置（秒）
-        this.gameETriggerTime = 21; // 降低为5秒，方便测试
-        this.gameFTriggerTime = 66; // 降低为5秒，方便测试
+        this.gameETriggerTime = 25; // 降低为5秒，方便测试
+        this.gameFTriggerTime = 55; // 降低为5秒，方便测试
     }
     
     // 初始化
@@ -239,15 +239,15 @@ class GameFlow {
         endScreen.style.zIndex = '999';
         
         // 创建标题
-        const title = document.createElement('h1');
-        title.textContent = 'Game Over';
-        title.style.fontSize = '3rem';
-        title.style.marginBottom = '2rem';
+        // const title = document.createElement('h1');
+        // title.textContent = '';
+        // title.style.fontSize = '3rem';
+        // title.style.marginBottom = '2rem';
         
         // 创建消息
         const message = document.createElement('p');
-        message.textContent = 'Congratulations on completing all the games!';
-        message.style.fontSize = '1.5rem';
+        message.textContent = 'Friendship Forever!';
+        message.style.fontSize = '3rem';
         message.style.marginBottom = '3rem';
         
         // 创建重新开始按钮
@@ -271,9 +271,9 @@ class GameFlow {
         });
         
         // 组装结束画面
-        endScreen.appendChild(title);
+        // endScreen.appendChild(title); // 注释掉这行，因为title变量已被注释
         endScreen.appendChild(message);
-        endScreen.appendChild(restartButton);
+        // endScreen.appendChild(restartButton);
         
         // 添加到容器
         container.appendChild(endScreen);

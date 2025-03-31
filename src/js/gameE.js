@@ -49,6 +49,8 @@ class GameE {
         gameContainer.style.borderRadius = '20px';
         gameContainer.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.2)';
         gameContainer.style.backdropFilter = 'blur(5px)'; // 背景模糊效果
+        gameContainer.style.backgroundColor = 'rgba(26, 71, 42, 0.4)'; // 降低不透明度至0.4
+        
         fullOverlay.appendChild(gameContainer);
         
         // 创建计时器和分数显示
@@ -312,7 +314,7 @@ class GameE {
         const sliderContainer = document.createElement('div');
         sliderContainer.style.position = 'relative';
         sliderContainer.style.width = '100%';
-        sliderContainer.style.height = '20px';
+        sliderContainer.style.height = '15px';
         sliderContainer.style.marginBottom = '20px';
         sliderContainer.style.borderRadius = '10px';
         sliderContainer.style.background = 'linear-gradient(to right, #3498db, #f1c40f, #e74c3c)'; // 蓝色(低温)->黄色(中温)->红色(高温)
@@ -324,7 +326,7 @@ class GameE {
         tempSlider.max = '100';
         tempSlider.value = '75';
         tempSlider.style.width = '100%';
-        tempSlider.style.height = '20px';
+        tempSlider.style.height = '10px';
         tempSlider.style.appearance = 'none';
         tempSlider.style.background = 'transparent';
         tempSlider.style.outline = 'none';
@@ -394,7 +396,7 @@ class GameE {
         addButton.style.transition = 'all 0.3s ease';
         // 添加图标或装饰
         const addIcon = document.createElement('span');
-        addIcon.textContent = '🥔'; // 土豆/食物图标
+        addIcon.textContent = '🥔🥔'; // 土豆/食物图标
         addIcon.style.marginRight = '8px';
         addIcon.style.fontSize = '18px';
         addButton.prepend(addIcon);
@@ -415,7 +417,7 @@ class GameE {
         flipButton.style.transition = 'all 0.3s ease';
         // 添加图标或装饰
         const flipIcon = document.createElement('span');
-        flipIcon.textContent = '🔄'; // 循环/翻转图标
+        flipIcon.textContent = '♻️♻️'; // 回收标志作为翻转图标
         flipIcon.style.marginRight = '8px';
         flipIcon.style.fontSize = '18px';
         flipButton.prepend(flipIcon);
@@ -436,7 +438,7 @@ class GameE {
         removeButton.style.transition = 'all 0.3s ease';
         // 添加图标或装饰
         const removeIcon = document.createElement('span');
-        removeIcon.textContent = '🍽️'; // 餐盘图标
+        removeIcon.textContent = '🍽️🍽️'; // 餐盘图标
         removeIcon.style.marginRight = '8px';
         removeIcon.style.fontSize = '18px';
         removeButton.prepend(removeIcon);
@@ -630,7 +632,7 @@ class GameE {
     // 显示锅已满提示
     showLimitMessage() {
         const limitMsg = document.createElement('div');
-        limitMsg.textContent = 'Pan is full! Flip or remove first';
+        limitMsg.textContent = 'Pan is full! Flip and remove first';
         limitMsg.style.position = 'absolute';
         limitMsg.style.left = '50%';
         limitMsg.style.top = '30%';
@@ -1030,7 +1032,7 @@ class GameE {
         resultOverlay.style.zIndex = '1000';
         
         const resultText = document.createElement('div');
-        resultText.textContent = 'Game Over!';
+        resultText.textContent = 'Congratulations!';
         resultText.style.color = 'white';
         resultText.style.fontSize = '48px';
         resultText.style.fontWeight = 'bold';
