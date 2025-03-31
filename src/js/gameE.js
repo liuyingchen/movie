@@ -39,8 +39,8 @@ class GameE {
         
         // 创建游戏主容器 - 缩小整体区域并居中
         const gameContainer = document.createElement('div');
-        gameContainer.style.width = '85%';
-        gameContainer.style.height = '85%';
+        gameContainer.style.width = '75%';
+        gameContainer.style.height = '75%';
         gameContainer.style.display = 'flex';
         gameContainer.style.flexDirection = 'column';
         gameContainer.style.justifyContent = 'space-between';

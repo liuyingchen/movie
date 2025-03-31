@@ -6,6 +6,79 @@ class VideoPlayer {
         this.onTimeUpdateCallbacks = [];
         this.onEndedCallbacks = [];
         
+        // 创建文字覆盖层元素，使其完全居中
+        this.textOverlay = document.createElement('div');
+        this.textOverlay.id = 'videoTextOverlay';
+        this.textOverlay.style.position = 'absolute';
+        this.textOverlay.style.top = '0';
+        this.textOverlay.style.left = '0';
+        this.textOverlay.style.width = '100%';
+        this.textOverlay.style.height = '100%';
+        this.textOverlay.style.display = 'flex';
+        this.textOverlay.style.flexDirection = 'column'; // 使用column布局，文字在上，按钮在下
+        this.textOverlay.style.justifyContent = 'center';
+        this.textOverlay.style.alignItems = 'center';
+        this.textOverlay.style.zIndex = '1000000'; // 设置超高的z-index确保在最上层
+        
+        // 创建内部文本容器，用于实际显示文本
+        this.textContent = document.createElement('div');
+        this.textContent.style.color = 'white';
+        this.textContent.style.fontSize = '24px';
+        this.textContent.style.textAlign = 'center';
+        this.textContent.style.maxWidth = '80%';
+        this.textContent.style.padding = '20px';
+        this.textContent.style.marginBottom = '40px'; // 添加下边距，与按钮分开
+        this.textContent.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.8)';
+        // 可选：添加半透明背景使文字更易读
+        this.textContent.style.backgroundColor = 'rgba(0, 0, 0, 0.01)';
+        this.textContent.style.borderRadius = '10px';
+        
+        // 创建开始按钮
+        this.startButton = document.createElement('button');
+        this.startButton.textContent = 'START';
+        this.startButton.style.padding = '15px 40px';
+        this.startButton.style.fontSize = '24px';
+        this.startButton.style.backgroundColor = '#4CAF50';
+        this.startButton.style.color = 'white';
+        this.startButton.style.border = 'none';
+        this.startButton.style.borderRadius = '8px';
+        this.startButton.style.cursor = 'pointer';
+        this.startButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        this.startButton.style.transition = 'all 0.3s';
+        
+        // 添加按钮悬停和点击效果
+        this.startButton.onmouseover = () => {
+            this.startButton.style.backgroundColor = '#45a049';
+            this.startButton.style.transform = 'translateY(-2px)';
+            this.startButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.4)';
+        };
+        
+        this.startButton.onmouseout = () => {
+            this.startButton.style.backgroundColor = '#4CAF50';
+            this.startButton.style.transform = 'translateY(0)';
+            this.startButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        };
+        
+        this.startButton.onmousedown = () => {
+            this.startButton.style.transform = 'translateY(1px)';
+            this.startButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
+        };
+        
+        this.startButton.onmouseup = () => {
+            this.startButton.style.transform = 'translateY(-2px)';
+            this.startButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.4)';
+        };
+        
+        // 将文本容器和按钮添加到覆盖层
+        this.textOverlay.appendChild(this.textContent);
+        this.textOverlay.appendChild(this.startButton);
+        
+        // 添加覆盖层到视频容器
+        this.videoContainer.appendChild(this.textOverlay);
+        
+        // 默认隐藏覆盖层
+        this.textOverlay.style.display = 'none';
+        
         // 默认将视频设为非静音，允许声音播放
         this.videoElement.muted = false;
         this.videoElement.volume = 1.0;
@@ -182,5 +255,97 @@ class VideoPlayer {
     // 获取视频元素
     getVideoElement() {
         return this.videoElement;
+    }
+    
+    // 显示视频的第一帧作为背景，并展示文字和按钮
+    showFirstFrameWithTextAndButton(text, onButtonClick) {
+        console.log('显示视频第一帧作为背景，并展示文字和按钮');
+        
+        // 确保视频容器可见
+        this.videoContainer.style.display = 'block';
+        
+        // 暂停在第一帧
+        this.videoElement.currentTime = 0;
+        this.videoElement.pause();
+        
+        // 确保视频元素是可见的
+        this.videoElement.style.display = 'block';
+        this.videoElement.style.width = '100%';
+        this.videoElement.style.height = '100%';
+        this.videoElement.style.objectFit = 'cover';
+        
+        // 显示文字和按钮
+        this.textContent.textContent = text;
+        this.textOverlay.style.display = 'flex';
+        
+        // 设置按钮点击事件
+        // 移除之前的所有事件监听器
+        const newButton = this.startButton.cloneNode(true);
+        this.textOverlay.replaceChild(newButton, this.startButton);
+        this.startButton = newButton;
+        
+        // 添加按钮悬停和点击效果
+        this.startButton.onmouseover = () => {
+            this.startButton.style.backgroundColor = '#45a049';
+            this.startButton.style.transform = 'translateY(-2px)';
+            this.startButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.4)';
+        };
+        
+        this.startButton.onmouseout = () => {
+            this.startButton.style.backgroundColor = '#4CAF50';
+            this.startButton.style.transform = 'translateY(0)';
+            this.startButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        };
+        
+        this.startButton.onmousedown = () => {
+            this.startButton.style.transform = 'translateY(1px)';
+            this.startButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
+        };
+        
+        this.startButton.onmouseup = () => {
+            this.startButton.style.transform = 'translateY(-2px)';
+            this.startButton.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.4)';
+        };
+        
+        // 添加新的点击事件
+        this.startButton.addEventListener('click', () => {
+            // 隐藏按钮
+            this.startButton.style.display = 'none';
+            
+            // 执行回调函数
+            if (typeof onButtonClick === 'function') {
+                onButtonClick();
+            }
+        });
+    }
+    
+    // 添加一个新方法来显示文字覆盖层
+    showTextOverlay(text) {
+        this.textContent.textContent = text;
+        this.textOverlay.style.display = 'flex'; // 使用flex而不是block
+        // 隐藏按钮
+        this.startButton.style.display = 'none';
+    }
+    
+    // 添加一个新方法来显示文字覆盖层，并在指定秒数后自动隐藏
+    showTextOverlayWithTimeout(text, seconds = 5) {
+        this.textContent.textContent = text;
+        this.textOverlay.style.display = 'flex'; // 使用flex而不是block
+        // 隐藏按钮
+        this.startButton.style.display = 'none';
+        
+        // 设置定时器，在指定秒数后自动隐藏文字
+        if (this.textOverlayTimer) {
+            clearTimeout(this.textOverlayTimer);
+        }
+        
+        this.textOverlayTimer = setTimeout(() => {
+            this.hideTextOverlay();
+        }, seconds * 1000);
+    }
+    
+    // 添加一个新方法来隐藏文字覆盖层
+    hideTextOverlay() {
+        this.textOverlay.style.display = 'none';
     }
 } 

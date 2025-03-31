@@ -164,10 +164,29 @@ class GameManager {
             const videoElement = this.videoPlayer.getVideoElement();
             if (videoElement) {
                 // 确保视频元素是可见的，并设置更高的z-index
-                videoElement.style.zIndex = '50'; 
+                videoElement.style.display = 'block';
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoElement.style.objectFit = 'cover';
+                videoElement.style.position = 'absolute';
+                videoElement.style.top = '0';
+                videoElement.style.left = '0';
+                videoElement.style.zIndex = '5'; // 设置为5，使其在游戏容器之下但可见
                 videoElement.style.opacity = '1';
                 videoElement.style.visibility = 'visible';
-                videoElement.style.display = 'block';
+                
+                // 确保视频容器也是全屏的
+                const videoContainer = this.videoPlayer.videoContainer;
+                if (videoContainer) {
+                    videoContainer.style.display = 'block';
+                    videoContainer.style.width = '100%';
+                    videoContainer.style.height = '100%';
+                    videoContainer.style.position = 'absolute';
+                    videoContainer.style.top = '0';
+                    videoContainer.style.left = '0';
+                    videoContainer.style.zIndex = '1'; // 确保视频容器始终在低层级
+                    videoContainer.style.overflow = 'hidden'; // 防止视频溢出
+                }
                 
                 // 确保视频非静音
                 videoElement.muted = false;
@@ -175,7 +194,8 @@ class GameManager {
                 
                 console.log('视频背景样式设置为:', 
                     'zIndex=' + videoElement.style.zIndex, 
-                    'opacity=' + videoElement.style.opacity,
+                    'width=' + videoElement.style.width,
+                    'height=' + videoElement.style.height,
                     'muted=' + videoElement.muted);
                     
                 // 确保视频在播放

@@ -24,53 +24,16 @@ class GameFlow {
     async init() {
         console.log('初始化游戏流程');
         
-        // 设置开始按钮事件
-        const startButton = document.getElementById('startButton');
-        const startScreen = document.getElementById('startScreen');
-        
-        if (startButton) {
-            startButton.addEventListener('click', async () => {
-                console.log('用户点击了开始按钮');
-                
-                // 隐藏开始屏幕
-                startScreen.style.display = 'none';
-                
-                // 获取背景视频元素
-                const backgroundVideo = document.getElementById('backgroundVideo');
-                if (backgroundVideo) {
-                    // 确保视频不是静音状态
-                    backgroundVideo.muted = false;
-                    backgroundVideo.volume = 1.0;
-                    console.log('设置背景视频非静音');
-                }
-                
-                // 显示加载指示器
-                this.gameManager.showLoading();
-                
-                try {
-                    // 初始化游戏管理器
-                    this.gameManager.init();
-                    
-                    // 隐藏加载指示器
-                    this.gameManager.hideLoading();
-                    
-                    // 开始游戏流程
-                    this.startFlow();
-                    
-                    // 再次确认视频非静音
-                    setTimeout(() => {
-                        if (backgroundVideo) {
-                            backgroundVideo.muted = false;
-                            console.log('延迟确认背景视频非静音，当前状态:', backgroundVideo.muted);
-                        }
-                    }, 1000);
-                } catch (error) {
-                    console.error('初始化失败:', error);
-                    alert('游戏加载失败，请刷新页面重试。');
-                }
-            });
-        } else {
-            console.error('找不到开始按钮元素');
+        try {
+            // 初始化游戏管理器
+            this.gameManager.init();
+            
+            // 开始游戏流程
+            this.startFlow();
+            
+        } catch (error) {
+            console.error('初始化失败:', error);
+            alert('游戏加载失败，请刷新页面重试。');
         }
     }
     
@@ -93,9 +56,20 @@ class GameFlow {
             // 隐藏加载指示器
             this.gameManager.hideLoading();
             
-            // 播放视频A
-            this.videoPlayer.play();
-            console.log(`视频A播放，${this.gameETriggerTime}秒后将进入游戏E`);
+            // 显示视频A的第一帧作为背景，并显示文字和按钮
+            this.videoPlayer.showFirstFrameWithTextAndButton(
+                "Every Eid al-Fitr is a celebration of gratitude. But for 6-year-old Afra in Lahore, Pakistan, this year's festival holds special meaning...",
+                () => {
+                    // 按钮点击后播放视频，并显示文字5秒
+                    this.videoPlayer.play();
+                    // 在视频A上显示文字覆盖层，5秒后自动隐藏
+                    this.videoPlayer.showTextOverlayWithTimeout(
+                        "Every Eid al-Fitr is a celebration of gratitude. But for 6-year-old Afra in Lahore, Pakistan, this year's festival holds special meaning...", 
+                        5
+                    );
+                    console.log(`视频A播放，${this.gameETriggerTime}秒后将进入游戏E`);
+                }
+            );
             
             // 设置视频A的时间更新回调，在特定时间触发游戏E
             this.videoPlayer.addTimeUpdateCallback(() => {
@@ -291,6 +265,7 @@ class GameFlow {
             // 移除结束画面
             endScreen.remove();
             
+            this.gameManager.init();
             // 重新开始游戏流程
             this.startFlow();
         });

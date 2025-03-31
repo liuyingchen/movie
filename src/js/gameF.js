@@ -74,7 +74,7 @@ class GameF {
         this.container.style.opacity = '1';
         this.container.style.pointerEvents = 'auto';
         
-        // 添加!important以确保样式被应用
+        // 移除强制容器为全屏的样式设置，让内部gameContainer控制尺寸
         this.container.setAttribute('style', 
             'display: block !important; ' +
             'z-index: 999999 !important; ' +
@@ -105,8 +105,8 @@ class GameF {
         // 创建游戏容器
         const gameContainer = document.createElement('div');
         gameContainer.id = 'eid-gift-game';
-        gameContainer.style.width = '75%'; // 缩小到75%宽度
-        gameContainer.style.height = '75%'; // 缩小到75%高度
+        gameContainer.style.width = '75%'; // 恢复为75%宽度
+        gameContainer.style.height = '80%'; // 恢复为80%高度
         gameContainer.style.position = 'absolute';
         gameContainer.style.top = '50%'; // 垂直居中
         gameContainer.style.left = '50%'; // 水平居中
@@ -117,7 +117,7 @@ class GameF {
         gameContainer.style.overflow = 'auto';
         gameContainer.style.fontFamily = "'Montserrat', sans-serif";
         gameContainer.style.borderRadius = '15px'; // 添加圆角
-        gameContainer.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.3)'; // 添加阴影提高可见度
+        gameContainer.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.3)'; // 添加阴影
         
         // 添加样式
         const styleTag = document.createElement('style');
@@ -131,6 +131,10 @@ class GameF {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center; /* 添加垂直居中 */
+                padding: 0; /* 确保没有内边距 */
+                margin: 0; /* 确保没有外边距 */
+                box-sizing: border-box; /* 使用border-box */
             }
             
             .header {
@@ -169,11 +173,13 @@ class GameF {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center; /* 添加垂直居中 */
                 padding: 20px;
-                max-width: 1200px;
-                width: 100%;
+                width: 100%; /* 使用100%宽度 */
+                height: calc(100% - 150px); /* 计算高度，减去标题高度 */
                 position: relative;
                 z-index: 2;
+                box-sizing: border-box; /* 使用border-box */
             }
             
             .gift-container {
@@ -184,6 +190,8 @@ class GameF {
                 gap: 25px;
                 margin-top: 30px;
                 margin-bottom: 30px;
+                width: 100%; /* 使用100%宽度 */
+                max-width: 800px; /* 设置最大宽度 */
             }
             
             .gift-row {
@@ -311,22 +319,33 @@ class GameF {
             }
             
             .restart-btn {
-                margin-top: 30px;
-                padding: 12px 25px;
-                background: linear-gradient(145deg, #008800, #006600);
+                background-color: #4CAF50;
                 color: white;
                 border: none;
-                border-radius: 10px;
-                cursor: pointer;
-                font-size: 1.1rem;
+                padding: 15px 40px;
+                font-size: 18px;
                 font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                 transition: all 0.3s;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), 0 5px 5px rgba(0, 0, 0, 0.1);
+                margin-top: 30px;
+                position: relative;
+                overflow: hidden;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                z-index: 3;
             }
             
             .restart-btn:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+                background-color: #45a049;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            }
+            
+            .restart-btn:active {
+                transform: translateY(1px);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
             }
             
             .modal {
