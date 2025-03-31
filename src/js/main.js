@@ -266,19 +266,19 @@ class GameFlow {
         
         // 创建标题
         const title = document.createElement('h1');
-        title.textContent = '游戏结束';
+        title.textContent = 'Game Over';
         title.style.fontSize = '3rem';
         title.style.marginBottom = '2rem';
         
         // 创建消息
         const message = document.createElement('p');
-        message.textContent = '恭喜您完成了所有游戏!';
+        message.textContent = 'Congratulations on completing all the games!';
         message.style.fontSize = '1.5rem';
         message.style.marginBottom = '3rem';
         
         // 创建重新开始按钮
         const restartButton = document.createElement('button');
-        restartButton.textContent = '重新开始';
+        restartButton.textContent = 'RESTART';
         restartButton.style.padding = '1rem 2rem';
         restartButton.style.fontSize = '1.2rem';
         restartButton.style.backgroundColor = '#4CAF50';
