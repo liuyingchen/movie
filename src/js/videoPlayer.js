@@ -539,7 +539,7 @@ class VideoPlayer {
                 const timeout = setTimeout(() => {
                     console.log('视频预加载超时，但继续尝试:', videoPath);
                     resolve(); // 即使超时也继续进行
-                }, 10000); // 10秒超时
+                }, 500000); // 10秒超时
                 
                 tempVideo.oncanplaythrough = () => {
                     clearTimeout(timeout);
