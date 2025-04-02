@@ -114,37 +114,80 @@ class VideoPlayer {
         this.videoContainer.style.display = 'block';
         this.videoElement.style.zIndex = '1';
         
-        // 先尝试静音播放（这在iOS上更可能成功）
-        this.videoElement.muted = false;
-        this.videoElement.volume = 1.0;
+        // 检测设备类型
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // 更安全的播放方法，适用于iOS
+        // 根据设备类型采取不同策略
+        if (isIOS) {
+            // iOS设备上，先尝试静音播放
+            this.videoElement.muted = true;
+            this.videoElement.volume = 0;
+            console.log('iOS设备：尝试静音播放');
+        } else if (isMobile) {
+            // 其他移动设备，也先尝试静音播放
+            this.videoElement.muted = true;
+            this.videoElement.volume = 0;
+            console.log('移动设备：尝试静音播放');
+        } else {
+            // 桌面设备，尝试直接启用声音播放
+            this.videoElement.muted = false;
+            this.videoElement.volume = 1.0;
+            console.log('桌面设备：尝试直接播放声音');
+        }
+        
+        // 更安全的播放方法，适用于各种设备
         const safePlay = () => {
             // 尝试播放
             const playPromise = this.videoElement.play();
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log('视频成功开始播放（静音）');
+                    console.log('视频成功开始播放');
                     
-                    // 尝试取消静音（可能需要用户交互）
-                    const userInteractionHandler = () => {
-                        this.videoElement.muted = false;
-                        this.videoElement.volume = 1.0;
-                        console.log('尝试启用声音');
+                    // 如果是移动设备，使用交互事件启用声音
+                    if (isMobile) {
+                        // 尝试取消静音（可能需要用户交互）
+                        const userInteractionHandler = () => {
+                            this.videoElement.muted = false;
+                            this.videoElement.volume = 1.0;
+                            console.log('用户交互已启用声音');
+                            
+                            // 移除事件监听器
+                            document.removeEventListener('click', userInteractionHandler);
+                            document.removeEventListener('touchstart', userInteractionHandler);
+                        };
                         
-                        // 移除事件监听器
-                        document.removeEventListener('click', userInteractionHandler);
-                        document.removeEventListener('touchstart', userInteractionHandler);
-                    };
-                    
-                    // 添加用户交互事件，在用户交互时尝试取消静音
-                    document.addEventListener('click', userInteractionHandler);
-                    document.addEventListener('touchstart', userInteractionHandler);
-                    
+                        // 添加用户交互事件，在用户交互时尝试取消静音
+                        document.addEventListener('click', userInteractionHandler);
+                        document.addEventListener('touchstart', userInteractionHandler);
+                    }
+                    // 桌面设备上，如果直接播放失败，也会在catch中处理
                 }).catch(error => {
                     console.error('视频播放失败:', error);
-                    console.log('播放失败，即使是静音的。这在某些移动设备上很常见。');
+                    console.log('尝试静音播放作为备选方案');
+                    
+                    // 无论什么设备，如果播放失败，尝试静音播放
+                    this.videoElement.muted = true;
+                    return this.videoElement.play().then(() => {
+                        console.log('静音播放成功，现在需要用户交互启用声音');
+                        
+                        // 添加用户交互处理程序来启用声音
+                        const userInteractionHandler = () => {
+                            this.videoElement.muted = false;
+                            this.videoElement.volume = 1.0;
+                            console.log('用户交互后启用声音');
+                            
+                            // 移除事件监听器
+                            document.removeEventListener('click', userInteractionHandler);
+                            document.removeEventListener('touchstart', userInteractionHandler);
+                        };
+                        
+                        document.addEventListener('click', userInteractionHandler);
+                        document.addEventListener('touchstart', userInteractionHandler);
+                    }).catch(err => {
+                        console.error('即使静音也无法播放视频:', err);
+                    });
                 });
             }
         };
@@ -152,8 +195,10 @@ class VideoPlayer {
         // 立即执行播放
         safePlay();
         
-        // 为了增加在iOS上播放的机会，我们在短暂延迟后再次尝试
-        setTimeout(safePlay, 500);
+        // 为了增加在移动设备上播放的机会，我们在短暂延迟后再次尝试
+        if (isMobile) {
+            setTimeout(safePlay, 500);
+        }
     }
     
     // 暂停视频
@@ -167,9 +212,22 @@ class VideoPlayer {
         console.log('将视频设置为背景播放');
         this.videoContainer.style.display = 'block';
         
-        // 先尝试静音播放，这在iOS上成功率更高
-        this.videoElement.muted = true;
-        this.videoElement.volume = 0;
+        // 检测设备类型
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // 根据设备类型采取不同策略
+        if (isIOS || isMobile) {
+            // 移动设备上，先尝试静音播放
+            this.videoElement.muted = true;
+            this.videoElement.volume = 0;
+            console.log('移动设备：背景视频尝试静音播放');
+        } else {
+            // 桌面设备，尝试直接启用声音播放
+            this.videoElement.muted = false;
+            this.videoElement.volume = 1.0;
+            console.log('桌面设备：背景视频尝试直接播放声音');
+        }
         
         // 设置视频容器样式
         this.videoContainer.style.position = 'absolute';
@@ -179,7 +237,7 @@ class VideoPlayer {
         this.videoContainer.style.height = '100%';
         this.videoContainer.style.zIndex = '1'; // 降低z-index，确保视频在游戏层之下
         
-        // 设置视频元素样式，确保在iOS上也能正常工作
+        // 设置视频元素样式，确保在所有设备上正常工作
         this.videoElement.style.width = '100%';
         this.videoElement.style.height = '100%';
         this.videoElement.style.objectFit = 'cover'; // 确保视频覆盖整个容器
@@ -187,32 +245,57 @@ class VideoPlayer {
         this.videoElement.style.top = '0';
         this.videoElement.style.left = '0';
         
-        // 更安全的播放方法，适用于iOS
+        // 更安全的播放方法，适用于各种设备
         const safePlay = () => {
             // 尝试播放
             const playPromise = this.videoElement.play();
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log('背景视频成功播放（静音）');
+                    console.log('背景视频成功播放');
                     
-                    // 尝试取消静音（可能需要用户交互）
-                    const userInteractionHandler = () => {
-                        this.videoElement.muted = false;
-                        this.videoElement.volume = 1.0;
-                        console.log('尝试为背景视频启用声音');
+                    // 如果是移动设备，使用交互事件启用声音
+                    if (isMobile) {
+                        // 尝试取消静音（可能需要用户交互）
+                        const userInteractionHandler = () => {
+                            this.videoElement.muted = false;
+                            this.videoElement.volume = 1.0;
+                            console.log('用户交互已为背景视频启用声音');
+                            
+                            // 移除事件监听器
+                            document.removeEventListener('click', userInteractionHandler);
+                            document.removeEventListener('touchstart', userInteractionHandler);
+                        };
                         
-                        // 移除事件监听器
-                        document.removeEventListener('click', userInteractionHandler);
-                        document.removeEventListener('touchstart', userInteractionHandler);
-                    };
-                    
-                    // 添加用户交互事件，在用户交互时尝试取消静音
-                    document.addEventListener('click', userInteractionHandler);
-                    document.addEventListener('touchstart', userInteractionHandler);
+                        // 添加用户交互事件，在用户交互时尝试取消静音
+                        document.addEventListener('click', userInteractionHandler);
+                        document.addEventListener('touchstart', userInteractionHandler);
+                    }
                 }).catch(error => {
                     console.error('背景视频播放失败:', error);
-                    console.log('背景视频播放失败，即使是静音的。可能需要用户交互才能播放。');
+                    console.log('尝试静音播放背景视频作为备选方案');
+                    
+                    // 无论什么设备，如果播放失败，尝试静音播放
+                    this.videoElement.muted = true;
+                    return this.videoElement.play().then(() => {
+                        console.log('背景视频静音播放成功，现在需要用户交互启用声音');
+                        
+                        // 添加用户交互处理程序来启用声音
+                        const userInteractionHandler = () => {
+                            this.videoElement.muted = false;
+                            this.videoElement.volume = 1.0;
+                            console.log('用户交互后为背景视频启用声音');
+                            
+                            // 移除事件监听器
+                            document.removeEventListener('click', userInteractionHandler);
+                            document.removeEventListener('touchstart', userInteractionHandler);
+                        };
+                        
+                        document.addEventListener('click', userInteractionHandler);
+                        document.addEventListener('touchstart', userInteractionHandler);
+                    }).catch(err => {
+                        console.error('即使静音也无法播放背景视频:', err);
+                    });
                 });
             }
         };
@@ -220,8 +303,10 @@ class VideoPlayer {
         // 立即执行播放
         safePlay();
         
-        // 延迟再次尝试以增加成功率
-        setTimeout(safePlay, 500);
+        // 为了增加在移动设备上播放的机会，我们在短暂延迟后再次尝试
+        if (isMobile) {
+            setTimeout(safePlay, 500);
+        }
     }
     
     // 设置静音状态

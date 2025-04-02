@@ -25,12 +25,15 @@ class GameFlow {
         console.log('初始化游戏流程');
         
         try {
-            // 检测iOS设备
+            // 检测移动设备和iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // 获取声音提示元素
+            const iosPrompt = document.getElementById('iosAudioPrompt');
             
             // 如果是iOS设备，显示音频提示
             if (isIOS) {
-                const iosPrompt = document.getElementById('iosAudioPrompt');
                 if (iosPrompt) {
                     iosPrompt.style.display = 'block';
                     
@@ -46,6 +49,48 @@ class GameFlow {
                 }
                 
                 console.log('检测到iOS设备，已显示音频提示');
+            } 
+            // 对于其他移动设备，也显示提示但使用不同的文本
+            else if (isMobile && iosPrompt) {
+                // 修改提示文本为移动设备版本
+                const promptText = iosPrompt.querySelector('div');
+                if (promptText) {
+                    promptText.textContent = 'Tap to enable sound';
+                }
+                
+                iosPrompt.style.display = 'block';
+                
+                // 同样添加隐藏逻辑
+                const hidePrompt = () => {
+                    iosPrompt.style.display = 'none';
+                    document.removeEventListener('click', hidePrompt);
+                    document.removeEventListener('touchstart', hidePrompt);
+                };
+                
+                document.addEventListener('click', hidePrompt);
+                document.addEventListener('touchstart', hidePrompt);
+                
+                console.log('检测到移动设备，已显示通用音频提示');
+            } 
+            // 对于桌面设备，可能仍然需要用户交互
+            else if (iosPrompt) {
+                // 隐藏提示，但添加一个一次性事件监听器来处理第一次音频播放
+                iosPrompt.style.display = 'none';
+                
+                // 添加一次性事件监听器，主要用于桌面浏览器的自动播放政策
+                const enableAudio = () => {
+                    const videoElement = this.videoPlayer.getVideoElement();
+                    if (videoElement) {
+                        videoElement.muted = false;
+                        videoElement.volume = 1.0;
+                        console.log('桌面设备：用户交互已启用音频');
+                    }
+                    document.removeEventListener('click', enableAudio);
+                };
+                
+                document.addEventListener('click', enableAudio);
+                
+                console.log('检测到桌面设备，已添加静默音频启用处理');
             }
             
             // 初始化游戏管理器
