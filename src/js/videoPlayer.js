@@ -482,29 +482,74 @@ class VideoPlayer {
             
             if (isIOS) {
                 console.log('检测到iOS设备，使用替代预加载方法');
-                // 对于iOS，我们使用XHR来预加载视频，这对某些iOS版本更有效
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', videoPath, true);
-                xhr.responseType = 'blob';
                 
-                xhr.onload = function() {
-                    if (this.status === 200) {
-                        // 成功预加载
-                        console.log('iOS设备上视频预加载成功:', videoPath);
-                        resolve();
-                    } else {
-                        console.error('iOS视频预加载失败:', this.status);
-                        reject(new Error(`加载失败，状态码: ${this.status}`));
+                // 方法1：使用视频元素预加载（更可靠但不可见）
+                const tempVideo = document.createElement('video');
+                tempVideo.style.display = 'none';
+                tempVideo.style.width = '1px';
+                tempVideo.style.height = '1px';
+                tempVideo.style.position = 'absolute';
+                tempVideo.style.opacity = '0.01';
+                tempVideo.setAttribute('playsinline', '');
+                tempVideo.setAttribute('webkit-playsinline', '');
+                tempVideo.setAttribute('muted', '');
+                tempVideo.muted = true;
+                tempVideo.autoplay = false;
+                tempVideo.preload = 'auto';
+                
+                // 触摸开始事件监听器以便在iOS上激活视频处理
+                const touchStartHandler = () => {
+                    // 只需要一次触摸事件来启用媒体处理
+                    document.removeEventListener('touchstart', touchStartHandler);
+                };
+                document.addEventListener('touchstart', touchStartHandler);
+                
+                // 定义超时处理
+                const timeoutId = setTimeout(() => {
+                    console.log('iOS预加载超时，尝试替代方法:', videoPath);
+                    cleanup();
+                    
+                    // 备用方法：尝试XHR加载
+                    this.preloadWithXHR(videoPath)
+                        .then(() => resolve())
+                        .catch(() => {
+                            console.log('所有预加载方法均失败，允许继续以便后续直接加载');
+                            resolve();
+                        });
+                }, 20000);
+                
+                // 清理函数
+                const cleanup = () => {
+                    clearTimeout(timeoutId);
+                    if (tempVideo.parentNode) {
+                        tempVideo.parentNode.removeChild(tempVideo);
                     }
                 };
                 
-                xhr.onerror = function(error) {
-                    console.error('iOS视频预加载发生错误:', error);
-                    reject(error);
+                // 监听事件
+                tempVideo.oncanplaythrough = () => {
+                    console.log('iOS视频预加载成功:', videoPath);
+                    cleanup();
+                    resolve();
                 };
                 
-                // 发送请求开始加载
-                xhr.send();
+                tempVideo.onerror = (error) => {
+                    console.error('iOS视频预加载失败，尝试备用方法:', error);
+                    cleanup();
+                    
+                    // 如果视频预加载失败，尝试XHR方法
+                    this.preloadWithXHR(videoPath)
+                        .then(() => resolve())
+                        .catch(() => {
+                            console.log('所有预加载方法均失败，允许继续以便后续直接加载');
+                            resolve();
+                        });
+                };
+                
+                // 设置源并添加到DOM
+                tempVideo.src = videoPath;
+                document.body.appendChild(tempVideo);
+                tempVideo.load();
             } else {
                 // 非iOS设备，使用原来的预加载方法
                 // 创建一个临时的video元素用于预加载
@@ -539,7 +584,7 @@ class VideoPlayer {
                 const timeout = setTimeout(() => {
                     console.log('视频预加载超时，但继续尝试:', videoPath);
                     resolve(); // 即使超时也继续进行
-                }, 500000); // 10秒超时
+                }, 10000); // 10秒超时
                 
                 tempVideo.oncanplaythrough = () => {
                     clearTimeout(timeout);
@@ -559,6 +604,92 @@ class VideoPlayer {
                 // 开始加载
                 tempVideo.load();
             }
+        });
+    }
+    
+    // 使用XHR预加载视频（作为备用方法）
+    preloadWithXHR(videoPath) {
+        return new Promise((resolve, reject) => {
+            console.log('使用XHR预加载视频:', videoPath);
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', videoPath, true);
+            xhr.responseType = 'blob';
+            
+            // 添加进度监听
+            xhr.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    console.log(`XHR预加载进度: ${Math.round(percentComplete)}%`);
+                }
+            };
+            
+            xhr.onload = function() {
+                if (this.status === 200) {
+                    // 成功预加载 - 创建一个临时Blob URL
+                    const blob = this.response;
+                    const url = URL.createObjectURL(blob);
+                    
+                    // 创建一个临时视频元素来验证Blob是否可播放
+                    const tempVideo = document.createElement('video');
+                    tempVideo.style.display = 'none';
+                    tempVideo.muted = true;
+                    
+                    tempVideo.oncanplaythrough = function() {
+                        // 清理资源
+                        URL.revokeObjectURL(url);
+                        if (tempVideo.parentNode) {
+                            tempVideo.parentNode.removeChild(tempVideo);
+                        }
+                        console.log('XHR视频预加载成功 (验证可播放):', videoPath);
+                        resolve();
+                    };
+                    
+                    tempVideo.onerror = function() {
+                        // 清理资源
+                        URL.revokeObjectURL(url);
+                        if (tempVideo.parentNode) {
+                            tempVideo.parentNode.removeChild(tempVideo);
+                        }
+                        console.error('XHR获取的视频无法播放:', videoPath);
+                        reject(new Error('XHR预加载的视频无法播放'));
+                    };
+                    
+                    // 设置一个超时，以防验证过程卡住
+                    const timeout = setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        if (tempVideo.parentNode) {
+                            tempVideo.parentNode.removeChild(tempVideo);
+                        }
+                        console.log('XHR验证超时，假定成功:', videoPath);
+                        resolve();
+                    }, 5000);
+                    
+                    tempVideo.oncanplaythrough = function() {
+                        clearTimeout(timeout);
+                        URL.revokeObjectURL(url);
+                        if (tempVideo.parentNode) {
+                            tempVideo.parentNode.removeChild(tempVideo);
+                        }
+                        console.log('XHR视频预加载成功 (验证可播放):', videoPath);
+                        resolve();
+                    };
+                    
+                    // 设置视频源并添加到DOM
+                    tempVideo.src = url;
+                    document.body.appendChild(tempVideo);
+                } else {
+                    console.error('XHR视频预加载失败:', this.status);
+                    reject(new Error(`XHR加载失败，状态码: ${this.status}`));
+                }
+            };
+            
+            xhr.onerror = function(error) {
+                console.error('XHR视频预加载发生错误:', error);
+                reject(error);
+            };
+            
+            // 发送请求开始加载
+            xhr.send();
         });
     }
 } 
