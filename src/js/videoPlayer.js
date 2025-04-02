@@ -93,7 +93,16 @@ class VideoPlayer {
         return new Promise((resolve, reject) => {
             console.log('加载视频:', videoPath);
             this.currentVideo = videoPath;
-            this.videoElement.src = videoPath;
+            
+            // 检查是否有预加载的Blob URL
+            if (this.blobCache && this.blobCache[videoPath]) {
+                console.log('使用预加载的Blob URL:', videoPath);
+                this.videoElement.src = this.blobCache[videoPath];
+            } else {
+                console.log('无预加载Blob，直接加载:', videoPath);
+                this.videoElement.src = videoPath;
+            }
+            
             this.videoElement.load();
             
             this.videoElement.oncanplaythrough = () => {
@@ -103,7 +112,27 @@ class VideoPlayer {
             
             this.videoElement.onerror = (error) => {
                 console.error('视频加载错误:', error);
-                reject(error);
+                
+                // 如果使用Blob URL失败，尝试直接加载原始URL
+                if (this.blobCache && this.blobCache[videoPath]) {
+                    console.log('Blob URL加载失败，尝试原始URL');
+                    URL.revokeObjectURL(this.blobCache[videoPath]);
+                    delete this.blobCache[videoPath];
+                    this.videoElement.src = videoPath;
+                    this.videoElement.load();
+                    
+                    this.videoElement.oncanplaythrough = () => {
+                        console.log('原始URL视频加载完成');
+                        resolve();
+                    };
+                    
+                    this.videoElement.onerror = (fallbackError) => {
+                        console.error('原始URL也加载失败:', fallbackError);
+                        reject(fallbackError);
+                    };
+                } else {
+                    reject(error);
+                }
             };
         });
     }
@@ -556,10 +585,34 @@ class VideoPlayer {
         return new Promise((resolve, reject) => {
             console.log('预加载视频:', videoPath);
             
-            // 检测是否为iOS设备
+            // 检测设备类型
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/.test(navigator.userAgent);
             
-            if (isIOS) {
+            // 存储所有预加载的Blob URLs，以便后续使用
+            if (!this.blobCache) {
+                this.blobCache = {};
+            }
+            
+            // 对于安卓设备，采用不同的预加载策略
+            if (isAndroid) {
+                console.log('检测到安卓设备，使用XHR预加载方法');
+                
+                // 直接使用XHR加载，并将Blob缓存起来供后续使用
+                return this.preloadWithXHR(videoPath)
+                    .then(blobUrl => {
+                        if (blobUrl) {
+                            // 存储blob URL以便后续播放使用
+                            this.blobCache[videoPath] = blobUrl;
+                            console.log('安卓设备视频预加载成功并缓存:', videoPath);
+                        }
+                        resolve(blobUrl);
+                    })
+                    .catch(error => {
+                        console.error('安卓设备视频预加载失败:', error);
+                        resolve(); // 即使失败也解析，保证流程继续
+                    });
+            } else if (isIOS) {
                 console.log('检测到iOS设备，使用替代预加载方法');
                 
                 // 方法1：使用视频元素预加载（更可靠但不可见）
@@ -578,7 +631,6 @@ class VideoPlayer {
                 
                 // 触摸开始事件监听器以便在iOS上激活视频处理
                 const touchStartHandler = () => {
-                    // 只需要一次触摸事件来启用媒体处理
                     document.removeEventListener('touchstart', touchStartHandler);
                 };
                 document.addEventListener('touchstart', touchStartHandler);
@@ -590,7 +642,12 @@ class VideoPlayer {
                     
                     // 备用方法：尝试XHR加载
                     this.preloadWithXHR(videoPath)
-                        .then(() => resolve())
+                        .then(blobUrl => {
+                            if (blobUrl) {
+                                this.blobCache[videoPath] = blobUrl;
+                            }
+                            resolve();
+                        })
                         .catch(() => {
                             console.log('所有预加载方法均失败，允许继续以便后续直接加载');
                             resolve();
@@ -618,7 +675,12 @@ class VideoPlayer {
                     
                     // 如果视频预加载失败，尝试XHR方法
                     this.preloadWithXHR(videoPath)
-                        .then(() => resolve())
+                        .then(blobUrl => {
+                            if (blobUrl) {
+                                this.blobCache[videoPath] = blobUrl;
+                            }
+                            resolve();
+                        })
                         .catch(() => {
                             console.log('所有预加载方法均失败，允许继续以便后续直接加载');
                             resolve();
@@ -630,13 +692,14 @@ class VideoPlayer {
                 document.body.appendChild(tempVideo);
                 tempVideo.load();
             } else {
-                // 非iOS设备，使用原来的预加载方法
+                // 其他设备，使用原来的预加载方法，但尝试缓存更多数据
+                console.log('其他设备的预加载方法:', videoPath);
                 // 创建一个临时的video元素用于预加载
                 const tempVideo = document.createElement('video');
                 tempVideo.style.display = 'none'; // 隐藏元素
-                tempVideo.setAttribute('playsinline', ''); // 增加iOS兼容性
-                tempVideo.setAttribute('webkit-playsinline', ''); // 增加iOS兼容性
-                tempVideo.setAttribute('muted', ''); // 增加iOS兼容性
+                tempVideo.setAttribute('playsinline', '');
+                tempVideo.setAttribute('webkit-playsinline', '');
+                tempVideo.setAttribute('muted', '');
                 tempVideo.muted = true; // 确保静音
                 tempVideo.preload = 'auto'; // 设置预加载属性
                 
@@ -656,14 +719,25 @@ class VideoPlayer {
                     if (tempVideo.parentNode) {
                         tempVideo.parentNode.removeChild(tempVideo);
                     }
-                    reject(error);
+                    // 失败时尝试XHR方法
+                    this.preloadWithXHR(videoPath)
+                        .then(blobUrl => {
+                            if (blobUrl) {
+                                this.blobCache[videoPath] = blobUrl;
+                            }
+                            resolve();
+                        })
+                        .catch(err => {
+                            console.error('XHR预加载也失败:', err);
+                            reject(error);
+                        });
                 };
                 
                 // 设置超时，如果加载时间过长
                 const timeout = setTimeout(() => {
                     console.log('视频预加载超时，但继续尝试:', videoPath);
                     resolve(); // 即使超时也继续进行
-                }, 10000); // 10秒超时
+                }, 15000); // 15秒超时
                 
                 tempVideo.oncanplaythrough = () => {
                     clearTimeout(timeout);
@@ -686,7 +760,7 @@ class VideoPlayer {
         });
     }
     
-    // 使用XHR预加载视频（作为备用方法）
+    // 使用XHR预加载视频（作为备用方法），并返回Blob URL
     preloadWithXHR(videoPath) {
         return new Promise((resolve, reject) => {
             console.log('使用XHR预加载视频:', videoPath);
@@ -706,7 +780,7 @@ class VideoPlayer {
                 if (this.status === 200) {
                     // 成功预加载 - 创建一个临时Blob URL
                     const blob = this.response;
-                    const url = URL.createObjectURL(blob);
+                    const blobUrl = URL.createObjectURL(blob);
                     
                     // 创建一个临时视频元素来验证Blob是否可播放
                     const tempVideo = document.createElement('video');
@@ -714,18 +788,17 @@ class VideoPlayer {
                     tempVideo.muted = true;
                     
                     tempVideo.oncanplaythrough = function() {
-                        // 清理资源
-                        URL.revokeObjectURL(url);
+                        // 视频可播放，但不销毁URL，而是返回以供后续使用
                         if (tempVideo.parentNode) {
                             tempVideo.parentNode.removeChild(tempVideo);
                         }
                         console.log('XHR视频预加载成功 (验证可播放):', videoPath);
-                        resolve();
+                        resolve(blobUrl); // 返回blobUrl给调用者
                     };
                     
                     tempVideo.onerror = function() {
                         // 清理资源
-                        URL.revokeObjectURL(url);
+                        URL.revokeObjectURL(blobUrl);
                         if (tempVideo.parentNode) {
                             tempVideo.parentNode.removeChild(tempVideo);
                         }
@@ -735,26 +808,25 @@ class VideoPlayer {
                     
                     // 设置一个超时，以防验证过程卡住
                     const timeout = setTimeout(() => {
-                        URL.revokeObjectURL(url);
+                        // 即使验证超时，仍然返回blobUrl
                         if (tempVideo.parentNode) {
                             tempVideo.parentNode.removeChild(tempVideo);
                         }
                         console.log('XHR验证超时，假定成功:', videoPath);
-                        resolve();
+                        resolve(blobUrl);
                     }, 5000);
                     
                     tempVideo.oncanplaythrough = function() {
                         clearTimeout(timeout);
-                        URL.revokeObjectURL(url);
                         if (tempVideo.parentNode) {
                             tempVideo.parentNode.removeChild(tempVideo);
                         }
                         console.log('XHR视频预加载成功 (验证可播放):', videoPath);
-                        resolve();
+                        resolve(blobUrl);
                     };
                     
                     // 设置视频源并添加到DOM
-                    tempVideo.src = url;
+                    tempVideo.src = blobUrl;
                     document.body.appendChild(tempVideo);
                 } else {
                     console.error('XHR视频预加载失败:', this.status);
