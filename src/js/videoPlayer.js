@@ -115,8 +115,8 @@ class VideoPlayer {
         this.videoElement.style.zIndex = '1';
         
         // 先尝试静音播放（这在iOS上更可能成功）
-        this.videoElement.muted = true;
-        this.videoElement.volume = 0;
+        this.videoElement.muted = false;
+        this.videoElement.volume = 1.0;
         
         // 更安全的播放方法，适用于iOS
         const safePlay = () => {
