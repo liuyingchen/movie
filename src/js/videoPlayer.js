@@ -121,13 +121,13 @@ class VideoPlayer {
         // 根据设备类型采取不同策略
         if (isIOS) {
             // iOS设备上，先尝试静音播放
-            this.videoElement.muted = true;
-            this.videoElement.volume = 0;
+            this.videoElement.muted = false;
+            this.videoElement.volume = 1.0;
             console.log('iOS设备：尝试静音播放');
         } else if (isMobile) {
             // 其他移动设备，也先尝试静音播放
-            this.videoElement.muted = true;
-            this.videoElement.volume = 0;
+            this.videoElement.muted = false;
+            this.videoElement.volume = 1.0;
             console.log('移动设备：尝试静音播放');
         } else {
             // 桌面设备，尝试直接启用声音播放
@@ -197,7 +197,7 @@ class VideoPlayer {
         
         // 为了增加在移动设备上播放的机会，我们在短暂延迟后再次尝试
         if (isMobile) {
-            setTimeout(safePlay, 500);
+            setTimeout(safePlay, 100);
         }
     }
     
@@ -219,8 +219,8 @@ class VideoPlayer {
         // 根据设备类型采取不同策略
         if (isIOS || isMobile) {
             // 移动设备上，先尝试静音播放
-            this.videoElement.muted = true;
-            this.videoElement.volume = 0;
+            this.videoElement.muted = false;
+            this.videoElement.volume = 1.0;
             console.log('移动设备：背景视频尝试静音播放');
         } else {
             // 桌面设备，尝试直接启用声音播放
@@ -305,7 +305,7 @@ class VideoPlayer {
         
         // 为了增加在移动设备上播放的机会，我们在短暂延迟后再次尝试
         if (isMobile) {
-            setTimeout(safePlay, 500);
+            setTimeout(safePlay, 100);
         }
     }
     
