@@ -156,8 +156,46 @@ class VideoPlayer {
                 playPromise.then(() => {
                     console.log('视频成功开始播放');
                     
-                    // 如果是移动设备，使用交互事件启用声音
-                    if (isMobile) {
+                    // 区分iOS和其他移动设备的处理
+                    if (isIOS) {
+                        // iOS设备需要特殊处理
+                        console.log('iOS设备：播放成功，等待用户交互解除静音');
+                        
+                        // iOS专用交互处理
+                        const iosInteractionHandler = () => {
+                            // 尝试解除静音
+                            this.videoElement.muted = false;
+                            this.videoElement.volume = 1.0;
+                            console.log('iOS设备：用户交互已尝试启用声音');
+                            
+                            // 隐藏iOS音频提示
+                            const iosPrompt = document.getElementById('iosAudioPrompt');
+                            if (iosPrompt) iosPrompt.style.display = 'none';
+                            
+                            // 移除事件监听器
+                            document.removeEventListener('click', iosInteractionHandler);
+                            document.removeEventListener('touchstart', iosInteractionHandler);
+                            
+                            // 确认声音状态
+                            setTimeout(() => {
+                                if (this.videoElement.muted) {
+                                    console.log('iOS设备：静音解除失败，尝试重新播放');
+                                    // 再次尝试播放并解除静音
+                                    this.videoElement.play().then(() => {
+                                        this.videoElement.muted = false;
+                                    }).catch(e => console.log('iOS重试播放失败:', e));
+                                } else {
+                                    console.log('iOS设备：静音已成功解除');
+                                }
+                            }, 500);
+                        };
+                        
+                        // 添加iOS专用交互事件监听器
+                        document.addEventListener('click', iosInteractionHandler);
+                        document.addEventListener('touchstart', iosInteractionHandler);
+                        
+                    } else if (isMobile) {
+                        // 其他移动设备处理
                         // 尝试取消静音（可能需要用户交互）
                         const userInteractionHandler = () => {
                             this.videoElement.muted = false;
@@ -180,6 +218,19 @@ class VideoPlayer {
                     
                     // 无论什么设备，如果播放失败，尝试静音播放
                     this.videoElement.muted = true;
+                    
+                    // 确保iOS设备有正确的属性设置
+                    if (isIOS) {
+                        this.videoElement.setAttribute('playsinline', '');
+                        this.videoElement.setAttribute('webkit-playsinline', '');
+                        this.videoElement.setAttribute('controls', 'false');
+                        this.videoElement.setAttribute('preload', 'auto');
+                        
+                        // 确保显示iOS音频提示
+                        const iosPrompt = document.getElementById('iosAudioPrompt');
+                        if (iosPrompt) iosPrompt.style.display = 'block';
+                    }
+                    
                     return this.videoElement.play().then(() => {
                         console.log('静音播放成功，现在需要用户交互启用声音');
                         
@@ -188,6 +239,12 @@ class VideoPlayer {
                             this.videoElement.muted = false;
                             this.videoElement.volume = 1.0;
                             console.log('用户交互后启用声音');
+                            
+                            // 对于iOS，还需要隐藏提示
+                            if (isIOS) {
+                                const iosPrompt = document.getElementById('iosAudioPrompt');
+                                if (iosPrompt) iosPrompt.style.display = 'none';
+                            }
                             
                             // 移除事件监听器
                             document.removeEventListener('click', userInteractionHandler);
@@ -198,6 +255,17 @@ class VideoPlayer {
                         document.addEventListener('touchstart', userInteractionHandler);
                     }).catch(err => {
                         console.error('即使静音也无法播放视频:', err);
+                        
+                        // iOS特殊错误处理
+                        if (isIOS) {
+                            console.log('iOS设备：尝试延迟后再次播放');
+                            setTimeout(() => {
+                                this.videoElement.load();
+                                this.videoElement.play().catch(e => 
+                                    console.error('iOS最终播放尝试失败:', e)
+                                );
+                            }, 1000);
+                        }
                     });
                 });
             }
