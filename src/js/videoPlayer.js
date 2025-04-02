@@ -121,8 +121,8 @@ class VideoPlayer {
         // 根据设备类型采取不同策略
         if (isIOS) {
             // iOS设备上，先尝试静音播放
-            this.videoElement.muted = false;
-            this.videoElement.volume = 1.0;
+            this.videoElement.muted = true;
+            this.videoElement.volume = 0;
             console.log('iOS设备：尝试静音播放');
         } else if (isMobile) {
             // 其他移动设备，也先尝试静音播放
