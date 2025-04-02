@@ -25,6 +25,29 @@ class GameFlow {
         console.log('初始化游戏流程');
         
         try {
+            // 检测iOS设备
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            // 如果是iOS设备，显示音频提示
+            if (isIOS) {
+                const iosPrompt = document.getElementById('iosAudioPrompt');
+                if (iosPrompt) {
+                    iosPrompt.style.display = 'block';
+                    
+                    // 在用户点击后隐藏提示
+                    const hidePrompt = () => {
+                        iosPrompt.style.display = 'none';
+                        document.removeEventListener('click', hidePrompt);
+                        document.removeEventListener('touchstart', hidePrompt);
+                    };
+                    
+                    document.addEventListener('click', hidePrompt);
+                    document.addEventListener('touchstart', hidePrompt);
+                }
+                
+                console.log('检测到iOS设备，已显示音频提示');
+            }
+            
             // 初始化游戏管理器
             this.gameManager.init();
             

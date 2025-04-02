@@ -114,28 +114,46 @@ class VideoPlayer {
         this.videoContainer.style.display = 'block';
         this.videoElement.style.zIndex = '1';
         
-        // 最小化修改：确保视频有声音
-        this.videoElement.muted = false;
-        this.videoElement.volume = 1.0;
+        // 先尝试静音播放（这在iOS上更可能成功）
+        this.videoElement.muted = true;
+        this.videoElement.volume = 0;
         
-        // 使用catch来处理可能的播放失败
-        const playPromise = this.videoElement.play();
+        // 更安全的播放方法，适用于iOS
+        const safePlay = () => {
+            // 尝试播放
+            const playPromise = this.videoElement.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('视频成功开始播放（静音）');
+                    
+                    // 尝试取消静音（可能需要用户交互）
+                    const userInteractionHandler = () => {
+                        this.videoElement.muted = false;
+                        this.videoElement.volume = 1.0;
+                        console.log('尝试启用声音');
+                        
+                        // 移除事件监听器
+                        document.removeEventListener('click', userInteractionHandler);
+                        document.removeEventListener('touchstart', userInteractionHandler);
+                    };
+                    
+                    // 添加用户交互事件，在用户交互时尝试取消静音
+                    document.addEventListener('click', userInteractionHandler);
+                    document.addEventListener('touchstart', userInteractionHandler);
+                    
+                }).catch(error => {
+                    console.error('视频播放失败:', error);
+                    console.log('播放失败，即使是静音的。这在某些移动设备上很常见。');
+                });
+            }
+        };
         
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error('视频播放失败:', error);
-                console.log('尝试静音播放...');
-                this.videoElement.muted = true;
-                return this.videoElement.play();
-            }).then(() => {
-                // 播放成功后尝试重新启用声音
-                setTimeout(() => {
-                    this.videoElement.muted = false;
-                }, 1000);
-            }).catch(error => {
-                console.error('即使静音也无法播放视频:', error);
-            });
-        }
+        // 立即执行播放
+        safePlay();
+        
+        // 为了增加在iOS上播放的机会，我们在短暂延迟后再次尝试
+        setTimeout(safePlay, 500);
     }
     
     // 暂停视频
@@ -149,9 +167,9 @@ class VideoPlayer {
         console.log('将视频设置为背景播放');
         this.videoContainer.style.display = 'block';
         
-        // 最小化修改：确保视频有声音
-        this.videoElement.muted = false;
-        this.videoElement.volume = 1.0;
+        // 先尝试静音播放，这在iOS上成功率更高
+        this.videoElement.muted = true;
+        this.videoElement.volume = 0;
         
         // 设置视频容器样式
         this.videoContainer.style.position = 'absolute';
@@ -161,29 +179,49 @@ class VideoPlayer {
         this.videoContainer.style.height = '100%';
         this.videoContainer.style.zIndex = '1'; // 降低z-index，确保视频在游戏层之下
         
-        // 设置视频元素样式
+        // 设置视频元素样式，确保在iOS上也能正常工作
         this.videoElement.style.width = '100%';
         this.videoElement.style.height = '100%';
         this.videoElement.style.objectFit = 'cover'; // 确保视频覆盖整个容器
+        this.videoElement.style.position = 'absolute';
+        this.videoElement.style.top = '0';
+        this.videoElement.style.left = '0';
         
-        // 使用catch来处理可能的播放失败
-        const playPromise = this.videoElement.play();
+        // 更安全的播放方法，适用于iOS
+        const safePlay = () => {
+            // 尝试播放
+            const playPromise = this.videoElement.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('背景视频成功播放（静音）');
+                    
+                    // 尝试取消静音（可能需要用户交互）
+                    const userInteractionHandler = () => {
+                        this.videoElement.muted = false;
+                        this.videoElement.volume = 1.0;
+                        console.log('尝试为背景视频启用声音');
+                        
+                        // 移除事件监听器
+                        document.removeEventListener('click', userInteractionHandler);
+                        document.removeEventListener('touchstart', userInteractionHandler);
+                    };
+                    
+                    // 添加用户交互事件，在用户交互时尝试取消静音
+                    document.addEventListener('click', userInteractionHandler);
+                    document.addEventListener('touchstart', userInteractionHandler);
+                }).catch(error => {
+                    console.error('背景视频播放失败:', error);
+                    console.log('背景视频播放失败，即使是静音的。可能需要用户交互才能播放。');
+                });
+            }
+        };
         
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error('背景视频播放失败:', error);
-                console.log('尝试静音播放背景视频...');
-                this.videoElement.muted = true;
-                return this.videoElement.play();
-            }).then(() => {
-                // 播放成功后尝试重新启用声音
-                setTimeout(() => {
-                    this.videoElement.muted = false;
-                }, 1000);
-            }).catch(error => {
-                console.error('即使静音也无法播放背景视频:', error);
-            });
-        }
+        // 立即执行播放
+        safePlay();
+        
+        // 延迟再次尝试以增加成功率
+        setTimeout(safePlay, 500);
     }
     
     // 设置静音状态
@@ -354,38 +392,88 @@ class VideoPlayer {
         return new Promise((resolve, reject) => {
             console.log('预加载视频:', videoPath);
             
-            // 创建一个临时的video元素用于预加载
-            const tempVideo = document.createElement('video');
-            tempVideo.style.display = 'none'; // 隐藏元素
-            tempVideo.preload = 'auto'; // 设置预加载属性
+            // 检测是否为iOS设备
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             
-            // 设置事件监听器
-            tempVideo.oncanplaythrough = () => {
-                console.log('视频预加载完成:', videoPath);
-                // 从DOM中移除临时视频元素
-                if (tempVideo.parentNode) {
-                    tempVideo.parentNode.removeChild(tempVideo);
-                }
-                resolve();
-            };
-            
-            tempVideo.onerror = (error) => {
-                console.error('视频预加载错误:', error);
-                // 从DOM中移除临时视频元素
-                if (tempVideo.parentNode) {
-                    tempVideo.parentNode.removeChild(tempVideo);
-                }
-                reject(error);
-            };
-            
-            // 设置视频源
-            tempVideo.src = videoPath;
-            
-            // 将临时视频元素添加到DOM中（但保持隐藏）
-            document.body.appendChild(tempVideo);
-            
-            // 开始加载
-            tempVideo.load();
+            if (isIOS) {
+                console.log('检测到iOS设备，使用替代预加载方法');
+                // 对于iOS，我们使用XHR来预加载视频，这对某些iOS版本更有效
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', videoPath, true);
+                xhr.responseType = 'blob';
+                
+                xhr.onload = function() {
+                    if (this.status === 200) {
+                        // 成功预加载
+                        console.log('iOS设备上视频预加载成功:', videoPath);
+                        resolve();
+                    } else {
+                        console.error('iOS视频预加载失败:', this.status);
+                        reject(new Error(`加载失败，状态码: ${this.status}`));
+                    }
+                };
+                
+                xhr.onerror = function(error) {
+                    console.error('iOS视频预加载发生错误:', error);
+                    reject(error);
+                };
+                
+                // 发送请求开始加载
+                xhr.send();
+            } else {
+                // 非iOS设备，使用原来的预加载方法
+                // 创建一个临时的video元素用于预加载
+                const tempVideo = document.createElement('video');
+                tempVideo.style.display = 'none'; // 隐藏元素
+                tempVideo.setAttribute('playsinline', ''); // 增加iOS兼容性
+                tempVideo.setAttribute('webkit-playsinline', ''); // 增加iOS兼容性
+                tempVideo.setAttribute('muted', ''); // 增加iOS兼容性
+                tempVideo.muted = true; // 确保静音
+                tempVideo.preload = 'auto'; // 设置预加载属性
+                
+                // 设置事件监听器
+                tempVideo.oncanplaythrough = () => {
+                    console.log('视频预加载完成:', videoPath);
+                    // 从DOM中移除临时视频元素
+                    if (tempVideo.parentNode) {
+                        tempVideo.parentNode.removeChild(tempVideo);
+                    }
+                    resolve();
+                };
+                
+                tempVideo.onerror = (error) => {
+                    console.error('视频预加载错误:', error);
+                    // 从DOM中移除临时视频元素
+                    if (tempVideo.parentNode) {
+                        tempVideo.parentNode.removeChild(tempVideo);
+                    }
+                    reject(error);
+                };
+                
+                // 设置超时，如果加载时间过长
+                const timeout = setTimeout(() => {
+                    console.log('视频预加载超时，但继续尝试:', videoPath);
+                    resolve(); // 即使超时也继续进行
+                }, 10000); // 10秒超时
+                
+                tempVideo.oncanplaythrough = () => {
+                    clearTimeout(timeout);
+                    console.log('视频预加载完成:', videoPath);
+                    if (tempVideo.parentNode) {
+                        tempVideo.parentNode.removeChild(tempVideo);
+                    }
+                    resolve();
+                };
+                
+                // 设置视频源
+                tempVideo.src = videoPath;
+                
+                // 将临时视频元素添加到DOM中（但保持隐藏）
+                document.body.appendChild(tempVideo);
+                
+                // 开始加载
+                tempVideo.load();
+            }
         });
     }
 } 
