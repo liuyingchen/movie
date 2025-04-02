@@ -124,6 +124,17 @@ class VideoPlayer {
             this.videoElement.muted = true;
             this.videoElement.volume = 0;
             console.log('iOS设备：尝试静音播放');
+            
+            // 确保视频元素具有所有必要的iOS属性---- TODO 128- 136是新增的
+            this.videoElement.setAttribute('playsinline', '');
+            this.videoElement.setAttribute('webkit-playsinline', '');
+            this.videoElement.setAttribute('controls', 'false');
+            this.videoElement.setAttribute('preload', 'auto');
+            
+            // 确保iOS设备显示有声音图标
+            const iosPrompt = document.getElementById('iosAudioPrompt');
+            if (iosPrompt) iosPrompt.style.display = 'block';
+
         } else if (isMobile) {
             // 其他移动设备，也先尝试静音播放
             this.videoElement.muted = false;

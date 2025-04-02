@@ -99,26 +99,16 @@ class GameFlow {
             // 显示加载指示器
             this.gameManager.showLoading();
             
-            // 提前预加载所有视频
-            console.log('开始预加载所有视频...');
+            // 只预加载第一个视频（视频A）
+            console.log('开始预加载视频A...');
             
             try {
-                // 创建一个预加载视频A的Promise
-                const preloadVideoA = this.videoPlayer.preloadVideo(this.videoA);
-                
-                // 创建一个预加载视频B的Promise
-                const preloadVideoB = this.videoPlayer.preloadVideo(this.videoB);
-                
-                // 创建一个预加载视频C的Promise
-                const preloadVideoC = this.videoPlayer.preloadVideo(this.videoC);
-                
-                // 并行预加载所有视频
-                await Promise.all([preloadVideoA, preloadVideoB, preloadVideoC]);
-                
-                console.log('所有视频预加载完成');
+                // 只预加载视频A
+                await this.videoPlayer.preloadVideo(this.videoA);
+                console.log('视频A预加载完成');
             } catch (preloadError) {
-                console.warn('视频预加载失败:', preloadError);
-                console.log('将在需要时再加载视频');
+                console.warn('视频A预加载失败:', preloadError);
+                console.log('将在需要时再加载视频A');
             }
             
             // 预加载完成后隐藏加载指示器
@@ -194,6 +184,9 @@ class GameFlow {
                 // 启动游戏E，视频A继续作为背景播放
                 this.gameManager.startGameE();
                 
+                // 在游戏E启动后，开始预加载视频B和C
+                this.loadRemainingVideos();
+                
                 // 在游戏E完成时的回调
                 this.gameManager.gameE.onGameComplete(() => {
                     // 游戏E完成，过渡到视频B
@@ -222,6 +215,8 @@ class GameFlow {
                 
                 setTimeout(() => {
                     this.gameManager.startGameE();
+                    // 即使在开发模式也尝试预加载剩余视频
+                    this.loadRemainingVideos();
                     this.gameManager.gameE.onGameComplete(() => {
                         this.transitionToVideoB();
                     });
@@ -396,9 +391,13 @@ class GameFlow {
         // 创建消息
         const message = document.createElement('p');
         message.textContent = 'Friendship Forever!';
-        message.style.fontSize = '3rem';
+        message.style.fontSize = '4rem'; // 增大字体
         message.style.fontWeight = 'bold';
         message.style.marginBottom = '3rem';
+        message.style.textAlign = 'center';
+        message.style.textShadow = '0 0 20px rgba(255, 255, 255, 0.7), 0 0 30px rgba(70, 130, 180, 0.5)'; // 添加发光效果
+        message.style.transform = 'scale(0.9)'; // 起始略小
+        message.style.transition = 'transform 1.5s ease-out'; // 添加放大动画
         
         // 创建重新开始按钮
         const restartButton = document.createElement('button');
@@ -427,6 +426,38 @@ class GameFlow {
         
         // 添加到容器
         container.appendChild(endScreen);
+    }
+
+    async startGameE() {
+        console.log('开始游戏E');
+        this.currentGame = 'E';
+        
+        // 视频A已在init阶段预加载，无需重复加载
+        // 显示游戏E界面
+        this.gameE.loadGameEHTML();
+        
+        // 开始倒计时
+        this.gameE.startCountdown();
+        
+        // 在游戏E的60秒倒计时期间，异步加载视频B和C
+        this.loadRemainingVideos();
+    }
+    
+    // 异步加载剩余视频
+    async loadRemainingVideos() {
+        console.log('开始后台预加载剩余视频 (B和C)...');
+        
+        try {
+            // 并行加载视频B和C
+            const loadVideoB = this.videoPlayer.preloadVideo(this.videoB);
+            const loadVideoC = this.videoPlayer.preloadVideo(this.videoC);
+            
+            await Promise.all([loadVideoB, loadVideoC]);
+            console.log('视频B和C预加载完成');
+        } catch (error) {
+            console.warn('部分视频预加载失败:', error);
+            console.log('将在需要时再尝试加载');
+        }
     }
 }
 
